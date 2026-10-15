@@ -47,3 +47,18 @@ async def test_trials_give_pass_all_and_pass_any():
     assert summary["trials"] == 3
     assert summary["accuracy"] == pytest.approx(2 / 3)
     assert summary["pass_all_k"] == 0 and summary["pass_any_k"] == 1
+
+
+async def test_a_failing_question_is_recorded_not_lost():
+    qs = [Question("fb_1", "3M_2018_10K", "Capex?", "$1577.00", "metrics-generated"),
+          Question("fb_2", "3M_2018_10K", "Debt?", "$13B", "novel-generated")]
+
+    async def judge(question, gold, answer):
+        if gold == "$13B":
+            raise RuntimeError("judge down")
+        return "VERDICT: correct"
+
+    rows = await evaluate(qs, FakeResearcher(), judge)
+    assert rows[1]["verdict"] == "error" and rows[1]["error"] == "RuntimeError('judge down')"
+    summary = aggregate(rows)
+    assert summary["error_rate"] == 0.5 and summary["accuracy"] == 0.5

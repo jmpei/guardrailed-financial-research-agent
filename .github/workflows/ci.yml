@@ -23,6 +23,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync
+      - run: cd scripts && uv run python eval_gate.py --check-thresholds
+      - uses: actions/cache@v4
+        with:
+          path: data/index
+          key: pageindex-${{ hashFiles('src/gfra/config.py') }}-AMD_2022_10K-AMERICANEXPRESS_2022_10K
       - run: uv run python scripts/download_financebench.py
       - run: uv run python scripts/index_documents.py --docs AMD_2022_10K AMERICANEXPRESS_2022_10K
       - run: cd scripts && uv run python eval_gate.py

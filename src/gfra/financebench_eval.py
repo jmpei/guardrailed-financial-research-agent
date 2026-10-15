@@ -27,12 +27,17 @@ async def evaluate(questions, researcher, judge, trials: int = 1) -> list[dict]:
     rows = []
     for q in questions:
         for trial in range(trials):
-            result = await researcher.run(_question_text(q))
-            reply = await judge(q.question, q.answer, result.answer)
-            rows.append({"id": q.id, "trial": trial, "question": q.question, "gold": q.answer,
-                         "answer": result.answer, "judge_reply": reply, "verdict": parse_verdict(reply),
-                         "tool_calls": result.tool_calls, "cost_usd": result.cost_usd, "latency_s": result.latency_s,
-                         "blocked": len(result.blocked)})
+            row = {"id": q.id, "trial": trial, "question": q.question, "gold": q.answer}
+            try:
+                result = await researcher.run(_question_text(q))
+                reply = await judge(q.question, q.answer, result.answer)
+                row.update({"answer": result.answer, "judge_reply": reply, "verdict": parse_verdict(reply),
+                            "tool_calls": result.tool_calls, "cost_usd": result.cost_usd,
+                            "latency_s": result.latency_s, "blocked": len(result.blocked)})
+            except Exception as exc:
+                row.update({"answer": "", "judge_reply": "", "verdict": "error", "error": repr(exc),
+                            "tool_calls": [], "cost_usd": 0.0, "latency_s": 0.0, "blocked": 0})
+            rows.append(row)
     return rows
 
 
@@ -54,6 +59,7 @@ def aggregate(rows: list[dict]) -> dict:
         "refusal_rate": rate("refused"),
         "unknown_rate": rate("unknown"),
         "unparsed_rate": rate("unparsed"),
+        "error_rate": rate("error"),
         "mean_cost_usd": sum(r["cost_usd"] for r in rows) / n,
         "p95_latency_s": latencies[max(0, math.ceil(0.95 * n) - 1)],
     }

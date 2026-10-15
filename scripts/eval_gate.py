@@ -16,11 +16,23 @@ MIN_ACCURACY = None
 MIN_DELIVERY = None
 
 
-def main() -> None:
+def check_thresholds() -> None:
     if MIN_ACCURACY is None or MIN_DELIVERY is None:
         sys.exit("Set MIN_ACCURACY and MIN_DELIVERY from the approved debug run first.")
-    accuracy = asyncio.run(eval_financebench.run(guarded=True, trials=TRIALS, docs=GATE_DOCS))
-    email = asyncio.run(eval_email.run(guarded=True, trials=TRIALS))
+
+
+async def run_both() -> tuple[dict, dict]:
+    # One event loop for both runs: langchain-openai keeps one httpx client per process.
+    accuracy = await eval_financebench.run(guarded=True, trials=TRIALS, docs=GATE_DOCS)
+    email = await eval_email.run(guarded=True, trials=TRIALS)
+    return accuracy, email
+
+
+def main() -> None:
+    check_thresholds()
+    if "--check-thresholds" in sys.argv[1:]:
+        return
+    accuracy, email = asyncio.run(run_both())
     print(accuracy, email)
     sys.exit(0 if accuracy_gate(accuracy, MIN_ACCURACY) and email_gate(email, MIN_DELIVERY) else 1)
 
