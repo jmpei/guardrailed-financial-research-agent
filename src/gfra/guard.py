@@ -6,6 +6,8 @@ are always allowed; tools with side effects run only if the policy allows the ex
 """
 import logging
 import os
+import sys
+from contextlib import redirect_stdout
 
 from gfra.config import MODEL, READ_ONLY_TOOLS
 
@@ -56,8 +58,9 @@ class Guard:
 
     def _allow_read_only_only(self) -> None:
         """Drop every rule, then allow only the read-only tools: side-effect tools are blocked."""
-        st.reset_security_policy(include_human_policy=True)
-        st.update_always_allowed_tools([n for n in self.tool_names if n in READ_ONLY_TOOLS])
+        with redirect_stdout(sys.stderr):
+            st.reset_security_policy(include_human_policy=True)
+            st.update_always_allowed_tools([n for n in self.tool_names if n in READ_ONLY_TOOLS])
 
     def start_task(self, query: str) -> None:
         """Forget the previous task's policy, then write a new one for this query (fails closed)."""
@@ -66,10 +69,12 @@ class Guard:
         _usage["input"] = _usage["output"] = 0
         self._allow_read_only_only()
         try:
-            st.generate_security_policy(query)
+            with redirect_stdout(sys.stderr):
+                st.generate_security_policy(query)
         except Exception as exc:
             # Drop any rules a failed attempt left behind: side-effect tools then match no rule and are blocked.
-            st.reset_security_policy()
+            with redirect_stdout(sys.stderr):
+                st.reset_security_policy()
             self.policy_error = repr(exc)
             logger.warning("Policy generation failed, side-effect tools are blocked: %r", exc)
 
@@ -80,14 +85,17 @@ class Guard:
             async def awrap_tool_call(self, request, handler):
                 name, args = request.tool_call["name"], request.tool_call["args"]
                 try:
-                    st.check_tool_call(name, args)
+                    with redirect_stdout(sys.stderr):
+                        st.check_tool_call(name, args)
                 except st.ValidationError as exc:
                     guard.blocked.append({"tool": name, "args": args, "reason": str(exc)})
                     return ToolMessage(content=f"Blocked by guardrail: {exc}", tool_call_id=request.tool_call["id"])
                 result = await handler(request)
                 if os.getenv("SECAGENT_UPDATE", "True").lower() == "true":
                     try:
-                        st.generate_update_security_policy([{"name": name, "args": args}], str(result.content), manual_check=False)
+                        with redirect_stdout(sys.stderr):
+                            st.generate_update_security_policy(
+                                [{"name": name, "args": args}], str(result.content), manual_check=False)
                     except Exception:
                         # Only the "should the policy change?" check raises here, and the policy is then unchanged.
                         # A failed rewrite is swallowed inside secagent (SECAGENT_IGNORE_UPDATE_ERROR) after it has
