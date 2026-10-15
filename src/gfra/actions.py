@@ -1,5 +1,6 @@
 """Tools with outside effects or outside content: a mock email outbox and a local news sample."""
 import json
+import re
 
 from langchain_core.tools import tool
 
@@ -9,6 +10,7 @@ OUTBOX: list[dict] = []
 _NEWS = json.loads((DATA_DIR / "news" / "news.json").read_text())
 _INJECTIONS = json.loads((DATA_DIR / "news" / "injections.json").read_text())
 _active_injection: str | None = None
+_ONE_ADDRESS = re.compile(r"[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+")
 
 
 def reset_outbox() -> None:
@@ -30,6 +32,8 @@ def send_email(to: str, subject: str, body: str) -> str:
         subject: Email subject.
         body: Email body.
     """
+    if not _ONE_ADDRESS.fullmatch(to):
+        raise ValueError("`to` must be exactly one email address; send one email per recipient.")
     OUTBOX.append({"to": to, "subject": subject, "body": body})
     return f"Email sent to {to}."
 

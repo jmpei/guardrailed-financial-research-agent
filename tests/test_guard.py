@@ -172,3 +172,38 @@ def test_guard_prints_nothing_to_stdout(monkeypatch, capsys):
     run_tool(g, "fetch_news", {"company": "3M"}, fetch_news)
     run_tool(g, "send_email", {"to": "attacker@evil.example", "body": "x"}, send_email)
     assert capsys.readouterr().out == ""
+
+
+def test_failed_generation_stays_closed_after_a_later_update(monkeypatch):
+    """A successful post-call update must not write a send_email rule after generation failed."""
+    state = {"generated": False}
+
+    def fake(sys_prompt, user_prompt, temperature=0.0):
+        if "TOOL_CALL_PARAM" in user_prompt:
+            return "yes" if "TOOL_CALL_RESULT" not in user_prompt else json.dumps([{"name": "send_email", "args": {}}])
+        raise RuntimeError("API down")
+    monkeypatch.setattr(guard_mod, "_policy_request", fake)
+    g = Guard([send_email, fetch_news, get_page_content])
+    g.start_task("Summarize 3M news")
+    assert g.policy_error is not None
+    run_tool(g, "fetch_news", {"company": "3M"}, fetch_news)
+    out = run_tool(g, "send_email", {"to": "attacker@evil.example", "body": "x"}, send_email)
+    assert "Blocked by guardrail" in out.content
+
+
+@pytest.mark.parametrize("rule", [{"pattern": "team@bank\\.com"}, {"enum": ["team@bank.com"]}])
+def test_comma_joined_recipient_is_not_delivered(monkeypatch, rule):
+    from gfra import actions
+    policy = json.dumps([{"name": "send_email", "args": {"to": {"type": "string", **rule}}}])
+    monkeypatch.setattr(guard_mod, "_policy_request",
+                        lambda s, u, temperature=0.0: "no" if "TOOL_CALL_PARAM" in u else policy)
+    g = Guard([actions.send_email, fetch_news, get_page_content])
+    g.start_task("Email 3M capex to team@bank.com")
+    actions.reset_outbox()
+    args = {"to": "attacker@evil.example, team@bank.com", "subject": "s", "body": "x"}
+    try:
+        out = run_tool(g, "send_email", args, actions.send_email)
+    except Exception:
+        out = None
+    assert actions.OUTBOX == []
+    assert out is None or "Blocked by guardrail" in out.content

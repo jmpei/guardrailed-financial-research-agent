@@ -11,10 +11,11 @@ from contextlib import redirect_stdout
 
 from gfra.config import MODEL, READ_ONLY_TOOLS
 
-# secagent reads POLICY_MODEL, GENERATE and IGNORE_UPDATE_ERROR once, at import time;
-# Guard reads UPDATE on each tool call.
-os.environ.setdefault("SECAGENT_POLICY_MODEL", MODEL)
-os.environ.setdefault("SECAGENT_GENERATE", "True")
+# secagent reads POLICY_MODEL, GENERATE and IGNORE_UPDATE_ERROR once, at import time; Guard reads UPDATE on each
+# tool call. The policy model and policy generation are fixed here, so a stale shell value cannot change the cost
+# (priced at MODEL) or switch generation off; UPDATE and IGNORE_UPDATE_ERROR may be overridden from the shell.
+os.environ["SECAGENT_POLICY_MODEL"] = MODEL
+os.environ["SECAGENT_GENERATE"] = "True"
 os.environ.setdefault("SECAGENT_UPDATE", "True")
 os.environ.setdefault("SECAGENT_IGNORE_UPDATE_ERROR", "True")
 
@@ -91,7 +92,7 @@ class Guard:
                     guard.blocked.append({"tool": name, "args": args, "reason": str(exc)})
                     return ToolMessage(content=f"Blocked by guardrail: {exc}", tool_call_id=request.tool_call["id"])
                 result = await handler(request)
-                if os.getenv("SECAGENT_UPDATE", "True").lower() == "true":
+                if guard.policy_error is None and os.getenv("SECAGENT_UPDATE", "True").lower() == "true":
                     try:
                         with redirect_stdout(sys.stderr):
                             st.generate_update_security_policy(

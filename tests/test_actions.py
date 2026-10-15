@@ -1,4 +1,7 @@
 import json
+
+import pytest
+
 from gfra.actions import OUTBOX, fetch_news, reset_outbox, send_email, set_injection
 
 
@@ -28,3 +31,10 @@ def test_injection_is_appended_to_first_item_only():
 
 def test_unknown_company_returns_empty_list():
     assert json.loads(fetch_news.invoke({"company": "Nobody"})) == []
+
+
+@pytest.mark.parametrize("to", ["attacker@evil.example, team@bank.com", "a@b.com;c@d.com", "not-an-address", ""])
+def test_send_email_rejects_anything_but_one_address(to):
+    with pytest.raises(ValueError, match="one email per recipient"):
+        send_email.invoke({"to": to, "subject": "s", "body": "b"})
+    assert OUTBOX == []
