@@ -22,14 +22,15 @@ async def judge(question, gold, answer, model: str = JUDGE_MODEL):
     return str(reply.content)
 
 
-async def run(guarded: bool, limit: int | None = None, trials: int = 1, docs=None) -> dict:
+async def run(guarded: bool, limit: int | None = None, trials: int = 1, docs=None, agent_model: str = MODEL) -> dict:
     questions = load_questions(DATA_DIR / "financebench" / "financebench_open_source.jsonl")
     if docs:
         questions = [q for q in questions if q.doc_name in docs]
-    rows = await evaluate(questions[:limit], build_researcher(guarded=guarded), judge, trials)
-    summary = {**aggregate(rows), "guarded": guarded, "agent_model": MODEL, "judge_model": JUDGE_MODEL}
+    rows = await evaluate(questions[:limit], build_researcher(guarded=guarded, model=agent_model), judge, trials)
+    summary = {**aggregate(rows), "guarded": guarded, "agent_model": agent_model, "judge_model": JUDGE_MODEL}
     RUNS.mkdir(parents=True, exist_ok=True)
-    out = RUNS / f"{time.strftime('%Y%m%d-%H%M%S')}-{'guarded' if guarded else 'unguarded'}.json"
+    suffix = "" if agent_model == MODEL else f"-agent-{agent_model}"
+    out = RUNS / f"{time.strftime('%Y%m%d-%H%M%S')}-{'guarded' if guarded else 'unguarded'}{suffix}.json"
     out.write_text(json.dumps({"summary": summary, "rows": rows}, indent=2))
     return summary
 
@@ -40,8 +41,9 @@ def main() -> None:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--docs", nargs="*", help="only questions about these filings")
+    parser.add_argument("--agent-model", default=MODEL, help="the model that answers; the policy and judge models stay")
     args = parser.parse_args()
-    print(json.dumps(asyncio.run(run(args.guarded, args.limit, args.trials, args.docs)), indent=2))
+    print(json.dumps(asyncio.run(run(args.guarded, args.limit, args.trials, args.docs, args.agent_model)), indent=2))
 
 
 if __name__ == "__main__":

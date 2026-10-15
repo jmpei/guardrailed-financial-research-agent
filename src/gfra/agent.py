@@ -52,7 +52,9 @@ class ResearchResult:
 
 
 class Researcher:
-    def __init__(self, model, tools: list[BaseTool], guarded: bool, callbacks: list | None = None):
+    def __init__(self, model, tools: list[BaseTool], guarded: bool, callbacks: list | None = None,
+                 model_name: str = MODEL):
+        self.model_name = model_name
         self.guard = Guard(tools) if guarded else None
         # The first middleware is the outermost: the guard sees every call and its block message is never rewritten;
         # the error handler sits inside it and turns tool exceptions into error messages (LangGraph control-flow exceptions pass through).
@@ -73,16 +75,19 @@ class Researcher:
         ai = [m for m in messages if isinstance(m, AIMessage)]
         input_tokens = sum((m.usage_metadata or {}).get("input_tokens", 0) for m in ai)
         output_tokens = sum((m.usage_metadata or {}).get("output_tokens", 0) for m in ai)
+        cost = cost_usd(self.model_name, input_tokens, output_tokens)
         if self.guard:
+            # The policy model is always MODEL, whichever model answers.
             input_tokens += self.guard.policy_tokens["input"]
             output_tokens += self.guard.policy_tokens["output"]
+            cost += cost_usd(MODEL, self.guard.policy_tokens["input"], self.guard.policy_tokens["output"])
         return ResearchResult(
             answer=str(messages[-1].content),
             tool_calls=[{"name": c["name"], "args": c["args"]} for m in ai for c in m.tool_calls],
             blocked=list(self.guard.blocked) if self.guard else [],
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            cost_usd=cost_usd(MODEL, input_tokens, output_tokens),
+            cost_usd=cost,
             latency_s=time.perf_counter() - start,
             policy_error=self.guard.policy_error if self.guard else None,
         )

@@ -8,7 +8,7 @@ from gfra.observability import callbacks
 from gfra.retrieval import document_tools, make_client
 
 
-def build_researcher(guarded: bool = True) -> Researcher:
+def build_researcher(guarded: bool = True, model: str = MODEL) -> Researcher:
     tools = [*document_tools(make_client()), fetch_news, send_email]
-    model = ChatOpenAI(model=MODEL, temperature=0)
-    return Researcher(model, tools, guarded=guarded, callbacks=callbacks())
+    llm = ChatOpenAI(model=model, temperature=0)
+    return Researcher(llm, tools, guarded=guarded, callbacks=callbacks(), model_name=model)

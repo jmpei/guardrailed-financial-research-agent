@@ -8,6 +8,7 @@ from langchain_core.tools import tool
 import gfra.guard as guard_mod
 from gfra.actions import OUTBOX, fetch_news, reset_outbox, send_email, set_injection
 from gfra.agent import Researcher
+from gfra.config import cost_usd
 
 
 @pytest.fixture(autouse=True)
@@ -77,3 +78,10 @@ async def test_tool_error_reaches_model_and_is_not_a_block(team_policy):
     assert result.blocked == []
     last_turn = model.seen[-1]
     assert last_turn[-1].status == "error" and "pages out of range" in last_turn[-1].content
+
+
+async def test_cost_uses_the_answering_model_price():
+    model = scripted(news_call("n1"), AIMessage(content="done"))
+    result = await Researcher(model, [fetch_news], guarded=False, model_name="gpt-4.1-mini-2025-04-14").run("3M news?")
+    assert result.input_tokens == 100 and result.output_tokens == 10
+    assert result.cost_usd == cost_usd("gpt-4.1-mini-2025-04-14", 100, 10)

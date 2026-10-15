@@ -5,6 +5,7 @@ MODEL = "gpt-4o-mini-2024-07-18"
 # USD per 1M tokens (input, output), OpenAI pricing page
 PRICES = {
     "gpt-4o-mini-2024-07-18": (0.15, 0.60),
+    "gpt-4.1-mini-2025-04-14": (0.40, 1.60),
 }
 
 READ_ONLY_TOOLS = frozenset({
