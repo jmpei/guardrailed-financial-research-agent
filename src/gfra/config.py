@@ -1,0 +1,23 @@
+from pathlib import Path
+
+MODEL = "gpt-4o-mini-2024-07-18"
+
+# USD per 1M tokens (input, output), OpenAI pricing page
+PRICES = {
+    "gpt-4o-mini-2024-07-18": (0.15, 0.60),
+}
+
+READ_ONLY_TOOLS = frozenset({
+    "browse_documents",
+    "get_document",
+    "get_document_structure",
+    "get_page_content",
+    "fetch_news",
+})
+
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+
+
+def cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
+    price_in, price_out = PRICES[model]
+    return (input_tokens * price_in + output_tokens * price_out) / 1_000_000
