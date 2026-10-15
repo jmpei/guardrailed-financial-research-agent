@@ -2,20 +2,20 @@
 import argparse
 import asyncio
 import json
+from functools import partial
 from pathlib import Path
 
 from eval_financebench import judge
 
-from gfra.financebench_eval import aggregate, parse_verdict
+from gfra.calibration import rejudge_rows
+from gfra.financebench_eval import aggregate
 
 
 async def rejudge(run: Path, model: str) -> Path:
     data = json.loads(run.read_text())
-    rows = []
-    for r in data["rows"]:
-        reply = await judge(r["question"], r["gold"], r["answer"], model=model)
-        rows.append({**r, "judge_reply": reply, "verdict": parse_verdict(reply)})
-    summary = {**data["summary"], **aggregate(rows), "judge_model": model}
+    rows = await rejudge_rows(data["rows"], partial(judge, model=model))
+    source_run = data["summary"].get("source_run", run.stem)
+    summary = {**data["summary"], **aggregate(rows), "judge_model": model, "source_run": source_run}
     out = run.with_name(f"{run.stem}-judge-{model}.json")
     out.write_text(json.dumps({"summary": summary, "rows": rows}, indent=2))
     return out

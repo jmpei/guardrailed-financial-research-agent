@@ -1,6 +1,8 @@
+import asyncio
+
 import pytest
 
-from gfra.calibration import agreement, cohen_kappa, load_labels, sample_rows
+from gfra.calibration import agreement, cohen_kappa, load_labels, rejudge_rows, sample_rows
 
 
 def test_cohen_kappa():
@@ -27,3 +29,28 @@ def test_agreement_uses_only_labelled_rows(tmp_path):
     assert result["n"] == 2 and result["agreement"] == 0.5
     assert result["confusion"] == {"correct -> correct": 1, "incorrect -> correct": 1}
     assert load_labels(tmp_path / "missing.jsonl") == {}
+
+
+def test_agreement_without_overlap():
+    result = agreement({("q9", 0): "correct"}, [{"id": "q1", "trial": 0, "verdict": "correct"}])
+    assert result == {"n": 0, "agreement": None, "cohen_kappa": None, "confusion": {}}
+
+
+def test_rejudge_rows_skips_errors_and_survives_failures():
+    calls = []
+
+    async def fake_judge(question, gold, answer):
+        calls.append(question)
+        if question == "boom":
+            raise RuntimeError("api down")
+        return "Verdict: correct"
+
+    rows = [
+        {"id": "a", "trial": 0, "question": "ok", "gold": "g", "answer": "x", "judge_reply": "old", "verdict": "incorrect"},
+        {"id": "b", "trial": 0, "question": "err", "gold": "g", "answer": "", "judge_reply": "", "verdict": "error", "error": "e"},
+        {"id": "c", "trial": 0, "question": "boom", "gold": "g", "answer": "x", "judge_reply": "old", "verdict": "correct"},
+    ]
+    out = asyncio.run(rejudge_rows(rows, fake_judge))
+    assert out[0]["verdict"] == "correct" and out[0]["judge_reply"] == "Verdict: correct"
+    assert out[1] == rows[1] and "err" not in calls
+    assert out[2]["verdict"] == "error" and "api down" in out[2]["error"]

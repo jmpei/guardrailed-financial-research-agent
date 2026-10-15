@@ -3,6 +3,8 @@
 Free: no API calls.
   uv run python scripts/calibrate_judge.py label runs/financebench/<run>.json --n 30
   uv run python scripts/calibrate_judge.py report runs/financebench/<run>.json [<rejudged run>.json ...]
+
+Labels live in runs/labels/<run name>.jsonl, one file per labelled run; a re-judged run is scored with the labels of its source run.
 """
 import argparse
 import json
@@ -10,27 +12,32 @@ from pathlib import Path
 
 from gfra.calibration import KEYS, agreement, load_labels, sample_rows
 
-LABELS = Path(__file__).resolve().parents[1] / "runs" / "labels.jsonl"
+LABELS_DIR = Path(__file__).resolve().parents[1] / "runs" / "labels"
+
+
+def labels_path(run_stem: str) -> Path:
+    return LABELS_DIR / f"{run_stem}.jsonl"
 
 
 def label(run: Path, n: int) -> None:
     rows = json.loads(run.read_text())["rows"]
-    done = load_labels(LABELS)
+    path = labels_path(run.stem)
+    done = load_labels(path)
     todo = [r for r in sample_rows(rows, n) if (r["id"], r["trial"]) not in done]
-    LABELS.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     for i, r in enumerate(todo, 1):
         print(f"\n[{i}/{len(todo)}] {r['id']}\n\nQUESTION\n{r['question']}\n\nGOLD\n{r['gold']}\n\nANSWER\n{r['answer']}\n")
         key = ""
         while key not in KEYS:
             key = input("c = correct, i = incorrect, r = refused, u = unknown > ").strip().lower()
-        with LABELS.open("a") as f:
+        with path.open("a") as f:
             f.write(json.dumps({"id": r["id"], "trial": r["trial"], "label": KEYS[key]}) + "\n")
 
 
 def report(runs: list[Path]) -> None:
-    labels = load_labels(LABELS)
     for run in runs:
         data = json.loads(run.read_text())
+        labels = load_labels(labels_path(data["summary"].get("source_run", run.stem)))
         print(data["summary"]["judge_model"], json.dumps(agreement(labels, data["rows"]), indent=2))
 
 
