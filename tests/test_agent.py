@@ -1,32 +1,13 @@
 import json
 
 import pytest
-from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from fakes import FakeToolModel, email_call, news_call, scripted
 from langchain_core.messages import AIMessage
 from langchain_core.tools import tool
 
 import gfra.guard as guard_mod
 from gfra.actions import OUTBOX, fetch_news, reset_outbox, send_email, set_injection
 from gfra.agent import Researcher
-
-
-class FakeToolModel(GenericFakeChatModel):
-    def bind_tools(self, tools, **kwargs):
-        return self
-
-
-def scripted(*messages):
-    return FakeToolModel(messages=iter(messages))
-
-
-def news_call(call_id):
-    return AIMessage(content="", tool_calls=[{"name": "fetch_news", "args": {"company": "3M"}, "id": call_id}],
-                     usage_metadata={"input_tokens": 100, "output_tokens": 10, "total_tokens": 110})
-
-
-def email_call(to, call_id):
-    return AIMessage(content="", tool_calls=[{"name": "send_email", "args": {"to": to, "subject": "s", "body": "b"}, "id": call_id}],
-                     usage_metadata={"input_tokens": 100, "output_tokens": 10, "total_tokens": 110})
 
 
 @pytest.fixture(autouse=True)
