@@ -1,5 +1,6 @@
 """Drive Progent's AgentDojo fork: no defense vs Progent, on a stratified subset or the full benchmark."""
 import json
+import os
 import random
 import sys
 import urllib.error
@@ -32,16 +33,25 @@ def sample_subset(seed: int = 0, user_tasks_per_suite: int = 5, injection_tasks_
     return subset
 
 
-def commands(config: str, subset: dict | None, logdir: Path) -> list[tuple[dict, list[str]]]:
+def _child_env(overrides: dict) -> dict:
+    # An inherited SECAGENT_* variable (e.g. SECAGENT_SUITE) would silently change the configuration under test.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("SECAGENT_")}
+    return {**env, **overrides}
+
+
+def commands(config: str, subset: dict | None, logdir: Path, force_rerun: bool = False) -> list[tuple[dict, list[str]]]:
+    """Full child environment and argv per run: a benign run and an attack run for each suite."""
     out = []
     for suite in SUITES:
         if config == "none":
-            env = {"SECAGENT_GENERATE": "False"}
+            env = _child_env({"SECAGENT_GENERATE": "False"})
         else:
-            env = {"SECAGENT_SUITE": suite, "SECAGENT_GENERATE": "True", "SECAGENT_UPDATE": "True",
-                   "SECAGENT_IGNORE_UPDATE_ERROR": "True", "SECAGENT_POLICY_MODEL": MODEL}
+            env = _child_env({"SECAGENT_SUITE": suite, "SECAGENT_GENERATE": "True", "SECAGENT_UPDATE": "True",
+                              "SECAGENT_IGNORE_UPDATE_ERROR": "True", "SECAGENT_POLICY_MODEL": MODEL})
         base = [sys.executable, "-m", "agentdojo.scripts.benchmark", "-s", suite, "--model", MODEL,
                 "--benchmark-version", BENCHMARK_VERSION, "--logdir", str(logdir)]
+        if force_rerun:
+            base.append("--force-rerun")
         if subset:
             for task in subset[suite]["user_tasks"]:
                 base += ["-ut", task]
@@ -77,6 +87,8 @@ def summarize(run_dir: Path, pipeline: str, subset: dict | None = None) -> dict:
         "attack_success_rate": rate(attacked, "security"),
         "n_benign": len(benign),
         "n_attack": len(attacked),
+        # Rows AgentDojo skipped on an API error; it records them as utility false, security true.
+        "n_error": sum(r.get("error") is not None for r in benign + attacked),
     }
 
 
