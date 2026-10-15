@@ -5,10 +5,11 @@ from collections import Counter
 from pathlib import Path
 
 COLUMNS = ["id", "trial", "verdict", "question", "gold", "answer", "tool_calls", "blocked", "note", "failure_mode"]
+JUDGED_FAILURES = {"incorrect", "refused", "unknown", "unparsed"}
 
 
 def failures(rows: list[dict]) -> list[dict]:
-    return [r for r in rows if r["verdict"] != "correct"]
+    return [r for r in rows if r["verdict"] in JUDGED_FAILURES]
 
 
 def write_csv(rows: list[dict], path: Path) -> int:

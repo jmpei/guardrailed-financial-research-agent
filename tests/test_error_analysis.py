@@ -18,6 +18,13 @@ def test_export_keeps_only_failures_and_shows_tool_calls(tmp_path):
     assert rows[0]["note"] == rows[0]["failure_mode"] == ""
 
 
+def test_export_skips_infrastructure_errors_but_keeps_refusals(tmp_path):
+    path = tmp_path / "failures.csv"
+    assert write_csv([row("q1", "error"), row("q2", "refused")], path) == 1
+    rows = list(csv.DictReader(path.open()))
+    assert [r["id"] for r in rows] == ["q2"]
+
+
 def test_count_modes(tmp_path):
     path = tmp_path / "failures.csv"
     write_csv([row("q1", "incorrect"), row("q2", "incorrect"), row("q3", "refused")], path)

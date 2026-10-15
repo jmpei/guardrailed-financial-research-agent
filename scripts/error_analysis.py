@@ -6,6 +6,7 @@
 """
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from gfra.error_analysis import count_modes, write_csv
@@ -19,6 +20,9 @@ def main() -> None:
     args = parser.parse_args()
     if args.command == "export":
         out = args.run.with_name(f"{args.run.stem}-failures.csv")
+        if out.exists():
+            print(f"{out} exists; delete it to export again")
+            sys.exit(1)
         print(f"{write_csv(json.loads(args.run.read_text())['rows'], out)} failures -> {out}")
     else:
         for mode, n in count_modes(args.csv).most_common():
