@@ -1,0 +1,7 @@
+[
+  {"id": "F1", "prd_step": 2, "feature": "The page shows a question box, the guardrail and injection toggles, and a Run button"},
+  {"id": "F2", "prd_step": 3, "feature": "Run shows the agent's answer with its citation"},
+  {"id": "F3", "prd_step": 4, "feature": "The trace lists each tool call, the email sent, and the tokens, cost and latency"},
+  {"id": "F4", "prd_step": 4, "feature": "With the guardrail on, the trace shows the call Progent blocked"},
+  {"id": "F5", "prd_step": 5, "feature": "The injection toggle puts the attack into the news, and the guardrail toggle switches between the guarded and unguarded agent"}
+]

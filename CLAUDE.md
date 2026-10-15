@@ -5,7 +5,8 @@
 | What | Command |
 |---|---|
 | Install | `uv sync` |
-| Tests (no network, fake models) | `uv run pytest -q` |
+| Tests (fake models, no paid calls) | `uv run pytest -q` |
+| End-to-end demo tests | need Google Chrome installed (Playwright uses channel "chrome") |
 | Download FinanceBench PDFs (free) | `uv run python scripts/download_financebench.py` |
 
 ## Paid runs

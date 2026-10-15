@@ -16,6 +16,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "playwright==1.63.0",
     "pytest==9.1.1",
     "pytest-asyncio>=1.4.0",
 ]
@@ -35,4 +36,5 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = [
     "ignore::DeprecationWarning:secagent.role_analyzer",
+    "ignore::pandas.errors.Pandas4Warning",
 ]
