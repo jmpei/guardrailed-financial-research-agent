@@ -47,13 +47,18 @@ class Guard:
         st.add_langchain_tools(tools)
         self.blocked: list[dict] = []
         self.policy_tokens = _usage
+        self._allow_read_only_only()
+
+    def _allow_read_only_only(self) -> None:
+        """Drop every rule, then allow only the read-only tools: side-effect tools are blocked."""
+        st.reset_security_policy(include_human_policy=True)
+        st.update_always_allowed_tools([n for n in self.tool_names if n in READ_ONLY_TOOLS])
 
     def start_task(self, query: str) -> None:
         """Forget the previous task's policy, then write a new one for this query (fails closed)."""
         self.blocked = []
         _usage["input"] = _usage["output"] = 0
-        st.reset_security_policy(include_human_policy=True)
-        st.update_always_allowed_tools([n for n in self.tool_names if n in READ_ONLY_TOOLS])
+        self._allow_read_only_only()
         try:
             st.generate_security_policy(query)
         except Exception:

@@ -56,6 +56,12 @@ def run_tool(guard, name, args, impl):
     return asyncio.run(guard.middleware().awrap_tool_call(Req(name, args), handler))
 
 
+@pytest.fixture(autouse=True)
+def _fresh_secagent_policy():
+    """secagent keeps its policy in a module global; start every test from secagent's import state."""
+    guard_mod.st.security_policy = None
+
+
 @pytest.fixture
 def policy_llm(monkeypatch):
     """Replace the policy model call; the update check always answers 'no'."""
@@ -106,6 +112,23 @@ def test_partially_applied_policy_failure_blocks_side_effects(monkeypatch):
     g.start_task("Summarize 3M news")
     assert "Blocked by guardrail" in run_tool(g, "send_email", {"to": "attacker@evil.example", "body": "x"}, send_email).content
     assert run_tool(g, "fetch_news", {"company": "3M"}, fetch_news).content == "[]"
+
+
+def test_blocks_side_effects_before_first_task(policy_llm):
+    g = Guard([send_email, fetch_news, get_page_content])
+    assert "Blocked by guardrail" in run_tool(g, "send_email", {"to": "attacker@evil.example", "body": "x"}, send_email).content
+    assert run_tool(g, "fetch_news", {"company": "3M"}, fetch_news).content == "[]"
+
+
+def test_failed_policy_does_not_inherit_previous_task(policy_llm, monkeypatch):
+    g = Guard([send_email, fetch_news, get_page_content])
+    g.start_task("Email 3M capex to team@bank.com")
+
+    def broken(sys_prompt, user_prompt, temperature=0.0):
+        raise RuntimeError("API down")
+    monkeypatch.setattr(guard_mod, "_policy_request", broken)
+    g.start_task("Summarize 3M news")
+    assert "Blocked by guardrail" in run_tool(g, "send_email", {"to": "team@bank.com", "body": "x"}, send_email).content
 
 
 def test_start_task_resets_previous_policy(policy_llm, monkeypatch):
