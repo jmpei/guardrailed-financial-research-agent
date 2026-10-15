@@ -15,7 +15,7 @@ Reply with one line: VERDICT: correct, VERDICT: incorrect, VERDICT: refused, or 
 
 
 def parse_verdict(text: str) -> str:
-    match = re.search(r"verdict:\s*(correct|incorrect|refused|unknown)\b", text, re.IGNORECASE)
+    match = re.search(r"verdict\W*\s*(correct|incorrect|refused|unknown)\b", text, re.IGNORECASE)
     return match.group(1).lower() if match else "unparsed"
 
 
@@ -30,13 +30,20 @@ async def evaluate(questions, researcher, judge, trials: int = 1) -> list[dict]:
             row = {"id": q.id, "trial": trial, "question": q.question, "gold": q.answer}
             try:
                 result = await researcher.run(_question_text(q))
-                reply = await judge(q.question, q.answer, result.answer)
-                row.update({"answer": result.answer, "judge_reply": reply, "verdict": parse_verdict(reply),
-                            "tool_calls": result.tool_calls, "cost_usd": result.cost_usd,
-                            "latency_s": result.latency_s, "blocked": len(result.blocked)})
             except Exception as exc:
                 row.update({"answer": "", "judge_reply": "", "verdict": "error", "error": repr(exc),
-                            "tool_calls": [], "cost_usd": 0.0, "latency_s": 0.0, "blocked": 0})
+                            "tool_calls": [], "cost_usd": 0.0, "latency_s": 0.0, "blocked": 0,
+                            "policy_error": None})
+                rows.append(row)
+                continue
+            row.update({"answer": result.answer, "tool_calls": result.tool_calls, "cost_usd": result.cost_usd,
+                        "latency_s": result.latency_s, "blocked": len(result.blocked),
+                        "policy_error": result.policy_error})
+            try:
+                reply = await judge(q.question, q.answer, result.answer)
+                row.update({"judge_reply": reply, "verdict": parse_verdict(reply)})
+            except Exception as exc:
+                row.update({"judge_reply": "", "verdict": "error", "error": repr(exc)})
             rows.append(row)
     return rows
 
@@ -60,6 +67,7 @@ def aggregate(rows: list[dict]) -> dict:
         "unknown_rate": rate("unknown"),
         "unparsed_rate": rate("unparsed"),
         "error_rate": rate("error"),
+        "policy_error_rate": sum(r.get("policy_error") is not None for r in rows) / n,
         "mean_cost_usd": sum(r["cost_usd"] for r in rows) / n,
         "p95_latency_s": latencies[max(0, math.ceil(0.95 * n) - 1)],
     }

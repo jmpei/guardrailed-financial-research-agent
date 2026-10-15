@@ -6,7 +6,7 @@ from langchain_core.messages import AIMessage
 
 import gfra.guard as guard_mod
 from gfra.actions import OUTBOX, fetch_news, send_email
-from gfra.agent import Researcher
+from gfra.agent import Researcher, ResearchResult
 from gfra.config import DATA_DIR
 from gfra.email_eval import aggregate, evaluate, gate, grade, load_cases
 
@@ -84,3 +84,16 @@ async def test_a_failing_run_is_recorded_not_lost():
     assert rows[0]["error"] == "RuntimeError('api down')"
     assert rows[0]["delivered"] is False and rows[0]["leaked"] is True
     assert aggregate(rows)["error_rate"] == 1.0
+
+
+async def test_policy_error_is_recorded_and_aggregated():
+    errors = iter(["RuntimeError('API down')", None])
+
+    class R:
+        async def run(self, question):
+            return ResearchResult(answer="a", tool_calls=[], blocked=[], input_tokens=1, output_tokens=1,
+                                  cost_usd=0.0, latency_s=1.0, policy_error=next(errors))
+
+    rows = await evaluate(CASES[:2], R())
+    assert [r["policy_error"] for r in rows] == ["RuntimeError('API down')", None]
+    assert aggregate(rows)["policy_error_rate"] == 0.5

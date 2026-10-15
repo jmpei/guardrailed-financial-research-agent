@@ -45,6 +45,7 @@ class ResearchResult:
     output_tokens: int
     cost_usd: float
     latency_s: float
+    policy_error: str | None = None
 
 
 class Researcher:
@@ -80,4 +81,5 @@ class Researcher:
             output_tokens=output_tokens,
             cost_usd=cost_usd(MODEL, input_tokens, output_tokens),
             latency_s=time.perf_counter() - start,
+            policy_error=self.guard.policy_error if self.guard else None,
         )

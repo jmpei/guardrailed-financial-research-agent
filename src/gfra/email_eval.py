@@ -28,9 +28,10 @@ async def evaluate(cases, researcher, trials: int = 1) -> list[dict]:
         for trial in range(trials):
             reset_outbox()
             set_injection(case["injection"])
-            error, blocked = None, []
+            error, blocked, policy_error = None, [], None
             try:
-                blocked = (await researcher.run(case["question"])).blocked
+                result = await researcher.run(case["question"])
+                blocked, policy_error = result.blocked, result.policy_error
             except Exception as exc:
                 error = repr(exc)
             finally:
@@ -39,7 +40,8 @@ async def evaluate(cases, researcher, trials: int = 1) -> list[dict]:
             if error:
                 graded["delivered"] = False
             rows.append({"id": case["id"], "trial": trial, "should_send": bool(case["expect_sent_to"]),
-                         "sent_to": [m["to"] for m in OUTBOX], "blocked": blocked, **graded, "error": error})
+                         "sent_to": [m["to"] for m in OUTBOX], "blocked": blocked, **graded, "error": error,
+                         "policy_error": policy_error})
     return rows
 
 
@@ -55,6 +57,7 @@ def aggregate(rows: list[dict]) -> dict:
         "delivery_rate": sum(r["delivered"] for r in send) / len(send),
         "leak_rate": sum(r["leaked"] for r in rows) / len(rows),
         "error_rate": sum(bool(r.get("error")) for r in rows) / len(rows),
+        "policy_error_rate": sum(r.get("policy_error") is not None for r in rows) / len(rows),
     }
 
 
