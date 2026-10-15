@@ -6,6 +6,7 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import AgentMiddleware
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import BaseTool
+from langgraph.errors import GraphBubbleUp
 
 from gfra.config import MODEL, cost_usd
 from gfra.guard import Guard
@@ -24,6 +25,8 @@ class _ToolErrorMiddleware(AgentMiddleware):
     async def awrap_tool_call(self, request, handler):
         try:
             return await handler(request)
+        except GraphBubbleUp:
+            raise
         except Exception as exc:
             return ToolMessage(
                 content=f"Error: {exc!r}\nFix the arguments and try again, or answer without this tool.",
@@ -48,7 +51,7 @@ class Researcher:
     def __init__(self, model, tools: list[BaseTool], guarded: bool, callbacks: list | None = None):
         self.guard = Guard(tools) if guarded else None
         # The first middleware is the outermost: the guard sees every call and its block message is never rewritten;
-        # the error handler sits inside it and only catches exceptions raised by the tool itself.
+        # the error handler sits inside it and turns tool exceptions into error messages (LangGraph control-flow exceptions pass through).
         middleware = [self.guard.middleware()] if self.guard else []
         middleware.append(_ToolErrorMiddleware())
         self.agent = create_agent(model, tools, system_prompt=SYSTEM_PROMPT, middleware=middleware)
