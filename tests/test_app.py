@@ -65,7 +65,7 @@ async def test_trace_puts_injected_args_in_code_span():
     assert "`" not in (before + after).replace("``", "").replace("`send_email`", "")
 
 
-async def test_answer_returns_error_and_clears_injection_on_failure():
+async def test_answer_returns_error_and_clears_injection_on_failure(caplog):
     from gfra import actions
 
     class Boom:
@@ -73,5 +73,6 @@ async def test_answer_returns_error_and_clears_injection_on_failure():
             raise RuntimeError("boom")
 
     out, trace = await answer("q", True, True, "s4", {True: Boom(), False: Boom()}, RateLimiter(5))
-    assert "boom" in out and trace == ""
+    assert out == "Error: the request failed; try again later." and trace == ""
+    assert "boom" in caplog.text
     assert actions._active_injection is None

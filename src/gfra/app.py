@@ -1,7 +1,11 @@
 """Gradio demo: ask a question, toggle the guardrail and a news injection, see what was blocked."""
+import logging
+
 import gradio as gr
 
 from gfra.actions import OUTBOX, reset_outbox, set_injection
+
+logger = logging.getLogger(__name__)
 
 
 class RateLimiter:
@@ -41,8 +45,9 @@ async def answer(question, guarded, inject, session_id, researchers, limiter) ->
         lines += [f"- Email sent to {_code(m['to'])}" for m in OUTBOX]
         lines.append(f"- {result.input_tokens + result.output_tokens} tokens, ${result.cost_usd:.4f}, {result.latency_s:.1f} s")
         return result.answer, "\n".join(lines)
-    except Exception as e:
-        return f"Error: {e}", ""
+    except Exception:
+        logger.exception("Request failed")
+        return "Error: the request failed; try again later.", ""
     finally:
         set_injection(None)
 

@@ -23,7 +23,7 @@ def label(run: Path, n: int) -> None:
     rows = json.loads(run.read_text())["rows"]
     path = labels_path(run.stem)
     done = load_labels(path)
-    todo = [r for r in sample_rows(rows, n) if (r["id"], r["trial"]) not in done]
+    todo = [r for r in sample_rows([r for r in rows if r["verdict"] != "error"], n) if (r["id"], r["trial"]) not in done]
     path.parent.mkdir(parents=True, exist_ok=True)
     for i, r in enumerate(todo, 1):
         print(f"\n[{i}/{len(todo)}] {r['id']}\n\nQUESTION\n{r['question']}\n\nGOLD\n{r['gold']}\n\nANSWER\n{r['answer']}\n")

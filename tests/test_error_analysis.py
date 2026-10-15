@@ -1,4 +1,3 @@
-# tests/test_error_analysis.py
 import csv
 
 from gfra.error_analysis import count_modes, write_csv

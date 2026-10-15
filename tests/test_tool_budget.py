@@ -1,4 +1,3 @@
-# tests/test_tool_budget.py
 """Token budgets: tool definitions go into every model call, tool results into the next one.
 
 Counted with gpt-4o-mini's encoding (o200k_base) on the JSON the tools are sent as. The limits sit
