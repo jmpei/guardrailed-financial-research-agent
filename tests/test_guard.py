@@ -99,9 +99,22 @@ def test_policy_failure_blocks_side_effects(monkeypatch):
         raise RuntimeError("API down")
     monkeypatch.setattr(guard_mod, "_policy_request", broken)
     g = Guard([send_email, fetch_news, get_page_content])
+    assert g.policy_error is None
     g.start_task("Email 3M capex to team@bank.com")
+    assert "API down" in g.policy_error
     assert "Blocked by guardrail" in run_tool(g, "send_email", {"to": "team@bank.com", "body": "x"}, send_email).content
     assert run_tool(g, "fetch_news", {"company": "3M"}, fetch_news).content == "[]"
+    monkeypatch.setattr(guard_mod, "_policy_request", lambda s, u, temperature=0.0: TEAM_ONLY)
+    g.start_task("Email 3M capex to team@bank.com")
+    assert g.policy_error is None
+
+
+def test_update_off_makes_no_update_request(policy_llm, monkeypatch):
+    monkeypatch.setenv("SECAGENT_UPDATE", "False")
+    g = Guard([send_email, fetch_news, get_page_content])
+    g.start_task("Email 3M capex to team@bank.com")
+    assert run_tool(g, "send_email", {"to": "team@bank.com", "body": "x"}, send_email).content == "sent to team@bank.com"
+    assert not any("TOOL_CALL_PARAM" in prompt for prompt in policy_llm)
 
 
 def test_partially_applied_policy_failure_blocks_side_effects(monkeypatch):

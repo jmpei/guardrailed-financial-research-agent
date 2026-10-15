@@ -4,11 +4,13 @@ Before each task, Progent's policy model writes a policy from the user's request
 tool call, Progent's deterministic checker compares the call with the policy. Read-only tools
 are always allowed; tools with side effects run only if the policy allows the exact arguments.
 """
+import logging
 import os
 
 from gfra.config import MODEL, READ_ONLY_TOOLS
 
-# secagent reads these once, at import time.
+# secagent reads POLICY_MODEL, GENERATE and IGNORE_UPDATE_ERROR once, at import time;
+# Guard reads UPDATE on each tool call.
 os.environ.setdefault("SECAGENT_POLICY_MODEL", MODEL)
 os.environ.setdefault("SECAGENT_GENERATE", "True")
 os.environ.setdefault("SECAGENT_UPDATE", "True")
@@ -19,6 +21,8 @@ from langchain.agents.middleware import AgentMiddleware  # noqa: E402
 from langchain_core.messages import ToolMessage  # noqa: E402
 from langchain_core.tools import BaseTool  # noqa: E402
 from openai import OpenAI  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 _usage = {"input": 0, "output": 0}
 
@@ -47,6 +51,7 @@ class Guard:
         st.add_langchain_tools(tools)
         self.blocked: list[dict] = []
         self.policy_tokens = _usage
+        self.policy_error: str | None = None
         self._allow_read_only_only()
 
     def _allow_read_only_only(self) -> None:
@@ -57,13 +62,16 @@ class Guard:
     def start_task(self, query: str) -> None:
         """Forget the previous task's policy, then write a new one for this query (fails closed)."""
         self.blocked = []
+        self.policy_error = None
         _usage["input"] = _usage["output"] = 0
         self._allow_read_only_only()
         try:
             st.generate_security_policy(query)
-        except Exception:
+        except Exception as exc:
             # Drop any rules a failed attempt left behind: side-effect tools then match no rule and are blocked.
             st.reset_security_policy()
+            self.policy_error = repr(exc)
+            logger.warning("Policy generation failed, side-effect tools are blocked: %r", exc)
 
     def middleware(self) -> AgentMiddleware:
         guard = self
@@ -77,10 +85,14 @@ class Guard:
                     guard.blocked.append({"tool": name, "args": args, "reason": str(exc)})
                     return ToolMessage(content=f"Blocked by guardrail: {exc}", tool_call_id=request.tool_call["id"])
                 result = await handler(request)
-                try:
-                    st.generate_update_security_policy([{"name": name, "args": args}], str(result.content), manual_check=False)
-                except Exception:
-                    pass  # update failed: keep the current policy
+                if os.getenv("SECAGENT_UPDATE", "True").lower() == "true":
+                    try:
+                        st.generate_update_security_policy([{"name": name, "args": args}], str(result.content), manual_check=False)
+                    except Exception:
+                        # Only the "should the policy change?" check raises here, and the policy is then unchanged.
+                        # A failed rewrite is swallowed inside secagent (SECAGENT_IGNORE_UPDATE_ERROR) after it has
+                        # dropped the old generated rules, possibly keeping part of the new ones.
+                        pass
                 return result
 
         return _GuardMiddleware()
