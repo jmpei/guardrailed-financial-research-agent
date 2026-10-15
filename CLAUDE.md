@@ -11,7 +11,7 @@
 
 ## Paid runs
 
-- Any script that calls OpenAI or PageIndex costs money: `scripts/index_documents.py` and every eval runner (`run_agentdojo`, `eval_financebench`, `eval_email`, `eval_gate`). Quote the cost and get the user's explicit OK before each run.
+- Any script that calls OpenAI or PageIndex costs money: `scripts/index_documents.py` and every eval runner (`run_agentdojo`, `eval_financebench`, `eval_email`, `eval_gate`, `rejudge`). Quote the cost and get the user's explicit OK before each run.
 - `.claude/hooks/block-paid-scripts.py` enforces this: it asks the user in the main session and denies the call in a subagent.
 - Tests never spend money: `tests/conftest.py` replaces `OPENAI_API_KEY` with a fake key and removes the Langfuse keys.
 

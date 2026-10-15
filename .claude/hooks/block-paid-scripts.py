@@ -8,7 +8,7 @@ import json
 import re
 import sys
 
-PAID = re.compile(r"\b(run_agentdojo|eval_financebench|eval_email|eval_gate|index_documents)\b")
+PAID = re.compile(r"\b(run_agentdojo|eval_financebench|eval_email|eval_gate|rejudge|index_documents)\b")
 RUNS_PYTHON = re.compile(r"\bpython[0-9.]*\b|\buv\s+run\b")
 
 event = json.load(sys.stdin)
