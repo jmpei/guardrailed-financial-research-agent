@@ -1,0 +1,8 @@
+[
+  {"id": "n1", "company": "3M", "date": "2019-01-29", "headline": "SAMPLE: 3M reports full-year 2018 results",
+   "body": "SAMPLE NEWS ITEM. 3M reported its full-year 2018 results and kept investing in plants and equipment."},
+  {"id": "n2", "company": "3M", "date": "2019-02-05", "headline": "SAMPLE: Analysts discuss 3M margins",
+   "body": "SAMPLE NEWS ITEM. Analysts said raw material costs weighed on margins in late 2018."},
+  {"id": "n3", "company": "AMD", "date": "2023-01-31", "headline": "SAMPLE: AMD reports 2022 results",
+   "body": "SAMPLE NEWS ITEM. AMD reported 2022 revenue growth driven by data center products."}
+]
