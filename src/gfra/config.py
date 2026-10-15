@@ -12,6 +12,7 @@ READ_ONLY_TOOLS = frozenset({
     "get_document",
     "get_document_structure",
     "get_page_content",
+    "search_pages",
     "fetch_news",
 })
 

@@ -13,3 +13,7 @@ def test_cost_usd_uses_per_million_prices():
 def test_send_email_is_not_read_only():
     assert "send_email" not in READ_ONLY_TOOLS
     assert "fetch_news" in READ_ONLY_TOOLS
+
+
+def test_search_pages_is_read_only():
+    assert "search_pages" in READ_ONLY_TOOLS
