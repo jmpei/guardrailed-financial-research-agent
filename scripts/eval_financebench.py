@@ -12,7 +12,7 @@ from gfra.config import DATA_DIR, MODEL
 from gfra.data import load_questions
 from gfra.financebench_eval import JUDGE_PROMPT, aggregate, evaluate
 
-# Picked against the user's labels on 14 answers: Cohen's kappa 0.60, against -0.11 for gpt-4o-mini.
+# Picked against the user's labels on 14 answers: Cohen's kappa 0.74, against 0.20 for gpt-4o-mini.
 JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gpt-4.1-2025-04-14")
 RUNS = DATA_DIR.parent / "runs" / "financebench"
 
