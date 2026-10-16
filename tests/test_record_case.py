@@ -8,6 +8,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 
 import gfra.demo_view as demo_view
 import gfra.guard as guard_mod
+from gfra.ablation import AGENTDOJO_PROMPT
 from gfra.actions import fetch_news, send_email
 from gfra.agent import Researcher
 from gfra.config import DATA_DIR
@@ -48,8 +49,8 @@ def question_policy(monkeypatch):
     monkeypatch.setattr(guard_mod, "_policy_request", request)
 
 
-def build(guarded):
-    return Researcher(Obedient(messages=iter([])), [fetch_news, send_email], guarded=guarded)
+def build(guarded, **setup):
+    return Researcher(Obedient(messages=iter([])), [fetch_news, send_email], guarded=guarded, **setup)
 
 
 async def test_recordings_replay_as_the_three_demo_cases(tmp_path, monkeypatch, question_policy):
@@ -60,6 +61,8 @@ async def test_recordings_replay_as_the_three_demo_cases(tmp_path, monkeypatch, 
     assert [p.name for p in (leak, stop, sent)] == [r for _, r, _ in demo_view.SCENARIOS]
 
     run = json.loads(leak.read_text())
+    assert run["messages"][0]["content"] == AGENTDOJO_PROMPT  # attacked runs use the setup the demo runs them on
+    assert "financial research assistant" in json.loads(sent.read_text())["messages"][0]["content"]
     assert run["messages"][0]["role"] == "system" and run["messages"][1]["content"] == "What is the latest American Express news?"
     assert [m["to"] for m in run["outbox"]] == ["mark.black-2134@gmail.com"] and run["security"] is True
     _, trace, footer = demo_view.replay(leak.name)

@@ -2,6 +2,11 @@ from gfra.agent import ResearchResult
 from gfra.app import RateLimiter, answer, build_demo
 
 
+def both(fake):
+    """The same researcher for every (guardrail, attack) pair."""
+    return {(g, a): fake for g in (True, False) for a in (True, False)}
+
+
 class FakeResearcher:
     def __init__(self):
         self.calls = 0
@@ -16,7 +21,7 @@ class FakeResearcher:
 async def test_rate_limit_refuses_after_cap():
     fake = FakeResearcher()
     limiter = RateLimiter(max_requests=2)
-    researchers = {True: fake, False: fake}
+    researchers = both(fake)
     for _ in range(2):
         out, _, _, _ = await answer("q", True, False, "s1", researchers, limiter)
         assert out == "ok"
@@ -25,21 +30,28 @@ async def test_rate_limit_refuses_after_cap():
     assert fake.calls == 2
 
 
+async def test_answer_picks_the_researcher_for_both_toggles():
+    fakes = {(g, a): FakeResearcher() for g in (True, False) for a in (True, False)}
+    for g, a in fakes:
+        await answer("q", g, a, f"s-{g}-{a}", fakes, RateLimiter(5))
+    assert [f.calls for f in fakes.values()] == [1, 1, 1, 1]
+
+
 async def test_trace_shows_blocked_calls():
     fake = FakeResearcher()
-    _, trace, _, _ = await answer("q", True, True, "s2", {True: fake, False: fake}, RateLimiter(5))
+    _, trace, _, _ = await answer("q", True, True, "s2", both(fake), RateLimiter(5))
     assert "attacker@evil.example" in trace and "Blocked" in trace
 
 
 def test_build_demo_returns_blocks():
     fake = FakeResearcher()
-    assert build_demo({True: fake, False: fake}, RateLimiter(5)) is not None
+    assert build_demo(both(fake), RateLimiter(5)) is not None
 
 
 async def test_total_cap_refuses_across_sessions():
     fake = FakeResearcher()
     limiter = RateLimiter(max_requests=5, max_total=2)
-    researchers = {True: fake, False: fake}
+    researchers = both(fake)
     for sid in ("a", "b"):
         out, _, _, _ = await answer("q", True, False, sid, researchers, limiter)
         assert out == "ok"
@@ -57,7 +69,7 @@ async def test_trace_escapes_untrusted_text():
             return r
 
     fake = Evil()
-    _, trace, _, _ = await answer("q", True, False, "s3", {True: fake, False: fake}, RateLimiter(5))
+    _, trace, _, _ = await answer("q", True, False, "s3", both(fake), RateLimiter(5))
     assert "<img" not in trace and "&lt;img src=x onerror=alert(1)&gt;" in trace
 
 
@@ -69,7 +81,7 @@ async def test_news_feed_marks_the_injection_and_what_was_fetched():
             return r
 
     fake = News()
-    _, _, _, feed = await answer("q", True, True, "s5", {True: fake, False: fake}, RateLimiter(5))
+    _, _, _, feed = await answer("q", True, True, "s5", both(fake), RateLimiter(5))
     # Each item shows three times: twice in the looping ticker, once in its dialog.
     assert feed.count("Prompt injection") == 3 * 7  # the first item of each of the 7 companies
     assert feed.count("No injection") == 3 * 2  # the other two 3M items
@@ -83,7 +95,7 @@ async def test_answer_returns_error_and_clears_injection_on_failure(caplog):
         async def run(self, question):
             raise RuntimeError("boom")
 
-    out, trace, _, _ = await answer("q", True, True, "s4", {True: Boom(), False: Boom()}, RateLimiter(5))
+    out, trace, _, _ = await answer("q", True, True, "s4", both(Boom()), RateLimiter(5))
     assert out == "Error: the request failed; try again later." and trace == ""
     assert "boom" in caplog.text
     assert actions._active_injection is None

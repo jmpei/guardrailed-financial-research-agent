@@ -44,7 +44,7 @@ def free_port() -> int:
 @pytest.fixture(scope="module")
 def demo():
     os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
-    researchers = {True: FakeResearcher(True), False: FakeResearcher(False)}
+    researchers = {(g, a): FakeResearcher(g) for g in (True, False) for a in (True, False)}
     async def judge(question, gold, answer):
         return "VERDICT: correct"
 
@@ -105,10 +105,12 @@ def test_F5_toggles_reach_the_agent(page, demo):
     url, researchers = demo
     run(page, url, guarded=False, inject=True)
     expect(page.get_by_text("Agent: unguarded")).to_be_visible()
-    assert "mark.black-2134@gmail.com" in researchers[False].injections[-1]
+    expect(page.get_by_text("No guardrail, attack on")).to_be_visible()
+    assert "mark.black-2134@gmail.com" in researchers[(False, True)].injections[-1]
     run(page, url, guarded=True, inject=False)
     expect(page.get_by_text("Agent: guarded")).to_be_visible()
-    assert researchers[True].injections[-1] is None
+    expect(page.get_by_text("costs about 2.3x")).to_be_visible()
+    assert researchers[(True, False)].injections[-1] is None
 
 
 def test_F6_sources_open_a_filing(page, demo):

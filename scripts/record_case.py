@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from gfra.ablation import ATTACKS, load_tasks
 from gfra.actions import INJECTIONS, OUTBOX, reset_outbox, set_injection
-from gfra.app_factory import build_researcher
+from gfra.app_factory import ATTACK_SETUP, build_researcher
 from gfra.config import DATA_DIR, MODEL
 from gfra.demo_view import CASES_DIR
 from gfra.email_eval import grade
@@ -36,7 +36,7 @@ async def record(task_id: str, guarded: bool, attack: str | None, out_dir: Path 
                  build=build_researcher) -> Path:
     task = next(t for t in load_tasks(TASKS) if t["id"] == task_id)
     injection = f"{attack}:summary" if attack else None
-    researcher = build(guarded=guarded)
+    researcher = build(guarded=guarded, **(ATTACK_SETUP if attack else {}))  # the setup the demo runs
     reset_outbox()
     set_injection(injection)
     try:

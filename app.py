@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from gfra.app import CSS, THEME, RateLimiter, build_demo, head_script  # noqa: E402
 from gfra.demo_view import PDF_DIR, samples  # noqa: E402
 from gfra.financebench_eval import judge  # noqa: E402
-from gfra.app_factory import build_researcher  # noqa: E402
+from gfra.app_factory import ATTACK_SETUP, build_researcher  # noqa: E402
 
 if os.getenv("SPACE_ID"):  # set by Hugging Face on a Space
     import spaces
@@ -21,7 +21,9 @@ if os.getenv("SPACE_ID"):  # set by Hugging Face on a Space
 
 # One request at a time: Progent keeps the policy in module globals.
 # The demo answers with gpt-4o-mini (MODEL), the model the ablation and the recorded cases were measured on.
-demo = build_demo({True: build_researcher(guarded=True), False: build_researcher(guarded=False)},
+# (guardrail on, attack on) -> researcher; with the attack on it runs AgentDojo's baseline prompt (ATTACK_SETUP).
+demo = build_demo({(guarded, attacked): build_researcher(guarded=guarded, **(ATTACK_SETUP if attacked else {}))
+                   for guarded in (True, False) for attacked in (True, False)},
                   RateLimiter(5, max_total=100),
                   judge=judge)
 demo.queue(default_concurrency_limit=1)

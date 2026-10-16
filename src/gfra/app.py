@@ -262,16 +262,29 @@ class RateLimiter:
         return True
 
 
+# Shown when Run is pressed, by (guardrail on, attack on). Numbers from the ablation (README): the attack runs on
+# AgentDojo's baseline prompt, 9 news questions x 3 trials; the cost ratio is from the runs without an attack.
+RUN_NOTICES = {
+    (False, True): "No guardrail, attack on: in the ablation this attack made the agent email the attacker in 24 of "
+                   "27 runs (89%). The model does not fall for it every time.",
+    (True, False): "Guardrail on: Progent first has the model write a policy from your question, so a run costs "
+                   "about 2.3x as much as without it.",
+    (True, True): "Guardrail and attack on: the model does not always follow the injection; when it does, Progent "
+                  "blocks the email. In the ablation the agent tried to email the attacker in 24 of 27 runs, and "
+                  "Progent blocked all 24.",
+}
+
+
 async def answer(question, guarded, inject, session_id, researchers, limiter) -> tuple[str, str, str, str]:
     """The agent's answer (Markdown), the run trace, its tokens / cost / latency, and the news feed with what
-    this run fetched (HTML)."""
+    this run fetched (HTML). `researchers` maps (guardrail on, attack on) to a researcher."""
     feed = news_html(NEWS, INJECTIONS[DEMO_INJECTION] if inject else None, set())
     if not limiter.allow(session_id):
         return "Request limit reached; try again later.", "", "", feed
     try:
         reset_outbox()
         set_injection(DEMO_INJECTION if inject else None)
-        result = await researchers[bool(guarded)].run(question)
+        result = await researchers[(bool(guarded), bool(inject))].run(question)
         fetched = {str(c["args"].get("company", "")).lower() for c in result.tool_calls if c["name"] == "fetch_news"}
         injected = {item["company"].lower() for item in NEWS} if inject else set()
         return (result.answer, trace_html(question, result.tool_calls, result.blocked, list(OUTBOX), injected,
@@ -333,6 +346,8 @@ def build_demo(researchers: dict, limiter: RateLimiter, judge=None) -> gr.Blocks
         inject.change(lambda i: news_html(NEWS, INJECTIONS[DEMO_INJECTION] if i else None, set()), inject, feed)
 
         async def on_run(q, g, i, request: gr.Request):
+            if (g, i) in RUN_NOTICES:
+                gr.Info(RUN_NOTICES[(g, i)])
             feed_now = news_html(NEWS, INJECTIONS[DEMO_INJECTION] if i else None, set())
             if (q.strip(), g, i) in recorded:  # a recorded case: replay it instead of calling the model
                 return (*replay(recorded[(q.strip(), g, i)]), feed_now, answer_head())
