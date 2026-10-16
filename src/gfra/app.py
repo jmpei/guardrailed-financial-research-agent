@@ -74,8 +74,8 @@ CSS = f"""
 }}
 #header p {{ font-size: 17px; line-height: 1.7; color: #616161; margin: 0; }}
 #news-panel, #setup, #result {{ border: 1px solid #d9d9dd !important; border-radius: 22px !important; padding: 24px !important; }}
-.panel-title {{ font-family: {DISPLAY_FONT}; font-size: 24px; color: #000000; margin-bottom: 4px; }}
-.panel-sub {{ font-size: 14px; color: #616161; margin-bottom: 12px; }}
+.panel-title {{ font-family: {DISPLAY_FONT}; font-size: 24px; color: #000000; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }}
+.panel-sub {{ font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; color: #616161; }}
 #sources-drawer {{
   position: fixed; top: 120px; left: 0; z-index: 50; display: flex; align-items: flex-start;
   transform: translateX(-340px); transition: transform 0.2s ease;
@@ -159,7 +159,8 @@ CSS = f"""
 footer {{ display: none !important; }}
 /* The news panel takes the header's height; its ticker fills what is left. */
 #top {{ align-items: stretch !important; }}
-#news-panel {{ display: flex !important; flex-direction: column; }}
+#news-panel {{ display: flex !important; flex-direction: column; gap: 12px !important; }}
+#news-title {{ flex: none !important; }}
 #news {{ flex: 1 1 0 !important; min-height: 0; position: relative; overflow: hidden; }}
 #news .ticker {{ position: absolute; inset: 0; height: auto; }}
 .how {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }}
@@ -375,8 +376,8 @@ def build_demo(researchers: dict, limiter: RateLimiter, judge=None) -> gr.Blocks
             with gr.Column(scale=3):
                 gr.HTML(HEADER, elem_id="header")
             with gr.Column(scale=2, elem_id="news-panel"):
-                gr.HTML('<div class="panel-title">News</div><div class="panel-sub">What <code>fetch_news</code> returns. '
-                        'Each item is tagged. Hover to pause, click to read.</div>')
+                gr.HTML('<div class="panel-title">News <span class="panel-sub">What <code>fetch_news</code> returns</span></div>',
+                        elem_id="news-title")
                 feed = gr.HTML(news_html(NEWS, INJECTIONS[DEMO_INJECTION], set()), elem_id="news")
         gr.HTML(HOW)
         with gr.Row(elem_id="setup", equal_height=False):
