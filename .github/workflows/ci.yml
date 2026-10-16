@@ -11,14 +11,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync
-      # The demo tests read the index manifest, the FinanceBench questions and one filing; all are gitignored.
-      - run: |
-          mkdir -p data/index data/financebench/pdfs
-          cp tests/fixtures/manifest.json data/index/
-          base=https://raw.githubusercontent.com/patronus-ai/financebench/main
-          curl -sSfL -o data/financebench/financebench_open_source.jsonl $base/data/financebench_open_source.jsonl
-          curl -sSfL -o data/financebench/pdfs/3M_2018_10K.pdf $base/pdfs/3M_2018_10K.pdf
+      - run: .github/ci-data.sh
       - run: uv run pytest -q
+  docker:
+    # Builds the image and checks the demo page comes up; the fake key means no model call can succeed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: .github/ci-data.sh
+      - run: docker build -t gfra .
+      - run: docker run -d --name gfra -p 8080:8080 -e OPENAI_API_KEY=sk-test-no-network gfra
+      - run: |
+          for i in $(seq 60); do curl -sf -o /dev/null localhost:8080/ && exit 0; sleep 2; done
+          docker logs gfra; exit 1
   eval-gate:
     # Spends OpenAI and PageIndex tokens: manual trigger only.
     if: github.event_name == 'workflow_dispatch'
