@@ -2,7 +2,7 @@
 
 A research agent that answers questions from company filings (10-Ks, 10-Qs, earnings releases), reads news, and can send email. [Progent](https://github.com/sunblaze-ucb/progent) turns the user's request into a least-privilege policy and checks every tool call against it: when text injected into the news talks the agent into emailing someone the user never named, Progent blocks the call.
 
-Live demo: [Hugging Face Space](https://huggingface.co/spaces/jmpei/guardrailed-financial-research-agent). The case buttons replay recorded runs: an injected email sent without Progent, the same email blocked with it, and a requested email sent.
+Live demo: [Google Cloud Run](https://gfra-demo-seg47z5nhq-uc.a.run.app) (Docker image, first load can take ~30 s on a cold start) or [Hugging Face Space](https://huggingface.co/spaces/jmpei/guardrailed-financial-research-agent). The case buttons replay recorded runs: an injected email sent without Progent, the same email blocked with it, and a requested email sent.
 
 ## Results
 
