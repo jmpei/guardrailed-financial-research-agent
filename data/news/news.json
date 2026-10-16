@@ -1,8 +1,74 @@
 [
-  {"id": "n1", "company": "3M", "date": "2019-01-29", "headline": "SAMPLE: 3M reports full-year 2018 results",
-   "body": "SAMPLE NEWS ITEM. 3M reported its full-year 2018 results and kept investing in plants and equipment."},
-  {"id": "n2", "company": "3M", "date": "2019-02-05", "headline": "SAMPLE: Analysts discuss 3M margins",
-   "body": "SAMPLE NEWS ITEM. Analysts said raw material costs weighed on margins in late 2018."},
-  {"id": "n3", "company": "AMD", "date": "2023-01-31", "headline": "SAMPLE: AMD reports 2022 results",
-   "body": "SAMPLE NEWS ITEM. AMD reported 2022 revenue growth driven by data center products."}
+  {
+    "id": "mmm-2018q4",
+    "company": "3M",
+    "date": "2019-01-29",
+    "headline": "3M Reports Fourth-Quarter 2018 Results",
+    "url": "https://news.3m.com/2019-01-29-3M-Reports-Fourth-Quarter-2018-Results",
+    "body": "Full-year 2018 sales rose 3.5% to $32.8 billion and GAAP EPS was $8.89, up from $7.93; 3M returned $8.1 billion to shareholders."
+  },
+  {
+    "id": "mmm-2022q4",
+    "company": "3M",
+    "date": "2023-01-24",
+    "headline": "3M Reports Fourth-Quarter and Full-Year 2022 Results",
+    "url": "https://news.3m.com/2023-01-24-3M-Reports-Fourth-Quarter-and-Full-Year-2022-Results",
+    "body": "Fourth-quarter adjusted EPS was $2.28 and organic growth was 0.4%, below the 1 to 3% 3M expected, as consumer markets weakened and COVID slowed demand in China."
+  },
+  {
+    "id": "mmm-2023q2",
+    "company": "3M",
+    "date": "2023-07-25",
+    "headline": "3M Reports Second Quarter 2023 Results; Proactive Initiatives Drive Strong Quarterly Financial Results; Raises Full-Year Adjusted EPS Guidance",
+    "url": "https://news.3m.com/2023-07-25-3M-Reports-Second-Quarter-2023-Results-Proactive-Initiatives-Drive-Strong-Quarterly-Financial-Results-Raises-Full-Year-Adjusted-EPS-Guidance",
+    "body": "A $10.3 billion pre-tax charge for the PFAS public water systems settlement made GAAP EPS a loss of $12.35; 3M raised its full-year adjusted EPS outlook to $8.60 to $9.10."
+  },
+  {
+    "id": "amd-2022q4",
+    "company": "AMD",
+    "date": "2023-01-31",
+    "headline": "AMD Reports Fourth Quarter and Full Year 2022 Financial Results",
+    "url": "https://ir.amd.com/news-events/press-releases/detail/1115/amd-reports-fourth-quarter-and-full-year-2022-financial",
+    "body": "Full-year revenue rose 44% to $23.6 billion; fourth-quarter revenue was $5.6 billion, with GAAP net income of $21 million."
+  },
+  {
+    "id": "axp-2022q4",
+    "company": "American Express",
+    "date": "2023-01-27",
+    "headline": "American Express Delivers on 2022 Growth Plan With Full Year Revenue Growth of 25% and Earnings Per Share of $9.85",
+    "url": "https://www.businesswire.com/news/home/20230127005020/en/",
+    "body": "Full-year revenue rose 25% to $52.9 billion and net income was $7.5 billion; the company guided to 15 to 17% revenue growth for 2023."
+  },
+  {
+    "id": "ba-2022q4",
+    "company": "Boeing",
+    "date": "2023-01-25",
+    "headline": "Boeing Reports Fourth-Quarter Results",
+    "url": "https://boeing.mediaroom.com/2023-01-25-Boeing-Reports-Fourth-Quarter-Results",
+    "body": "Fourth-quarter revenue was $20.0 billion with a GAAP loss of $1.06 per share; Boeing delivered 480 commercial airplanes in 2022 and ended the year with a $404 billion backlog."
+  },
+  {
+    "id": "pep-2022q4",
+    "company": "PepsiCo",
+    "date": "2023-02-09",
+    "headline": "PepsiCo Reports Fourth-Quarter and Full-Year 2022 Results; Provides 2023 Financial Outlook",
+    "url": "https://www.sec.gov/Archives/edgar/data/77476/000007747623000009/q420228-kxexhibit991.htm",
+    "body": "Full-year net revenue rose 8.7% to $86.4 billion and core EPS was $6.79; PepsiCo raised its annualized dividend by 10%."
+  },
+  {
+    "id": "amcr-fy2023",
+    "company": "Amcor",
+    "date": "2023-08-16",
+    "headline": "Amcor Reports Fiscal 2023 Results and Provides Outlook for Fiscal 2024",
+    "url": "https://announcements.asx.com.au/asxpdf/20230817/pdf/05sq768bkntmnm.pdf",
+    "body": "Net sales were $14.7 billion and adjusted EBIT was $1.6 billion; the CEO said demand softened and customer destocking continued through the last two quarters."
+  },
+  {
+    "id": "ulta-2023q4",
+    "company": "Ulta Beauty",
+    "date": "2024-03-14",
+    "headline": "Ulta Beauty Announces Fourth Quarter Fiscal 2023 Results",
+    "url": "https://www.ulta.com/investor/news-events/press-releases/detail/180/ulta-beauty-announces-fourth-quarter-fiscal-2023-results",
+    "body": "Fourth-quarter net sales rose to $3.55 billion from $3.23 billion, comparable sales grew 2.5%, and net income was $394.4 million, or $8.08 per diluted share."
+  }
 ]

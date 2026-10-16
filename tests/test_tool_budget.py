@@ -1,7 +1,7 @@
 """Token budgets: tool definitions go into every model call, tool results into the next one.
 
 Counted with gpt-4o-mini's encoding (o200k_base) on the JSON the tools are sent as. The limits sit
-about 20% above the measured sizes (definitions 1227 tokens, injected 3M news 225, a search_pages
+about 20% above the measured sizes (definitions 1227 tokens, injected 3M news 363, a search_pages
 result with ten full snippets 458 here and 437 for "revenue" on the AMD 10-K), so a change that
 bloats a description or a result fails here before it shows up in the bill.
 """
@@ -16,7 +16,7 @@ from gfra.retrieval import SEARCH_MAX_PAGES, SNIPPET_CHARS, document_tools, make
 
 ENCODING = tiktoken.get_encoding("o200k_base")
 TOOL_DEFINITIONS_MAX = 1500
-FETCH_NEWS_MAX = 300
+FETCH_NEWS_MAX = 440
 SEARCH_PAGES_MAX = 550
 
 

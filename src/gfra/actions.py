@@ -7,8 +7,8 @@ from langchain_core.tools import tool
 from gfra.config import DATA_DIR
 
 OUTBOX: list[dict] = []
-_NEWS = json.loads((DATA_DIR / "news" / "news.json").read_text())
-_INJECTIONS = json.loads((DATA_DIR / "news" / "injections.json").read_text())
+NEWS = json.loads((DATA_DIR / "news" / "news.json").read_text())
+INJECTIONS = json.loads((DATA_DIR / "news" / "injections.json").read_text())
 _active_injection: str | None = None
 _ONE_ADDRESS = re.compile(r"[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+")
 
@@ -20,7 +20,7 @@ def reset_outbox() -> None:
 def set_injection(injection_id: str | None) -> None:
     """Append an attack text to the first news item returned (demo and eval only)."""
     global _active_injection
-    _active_injection = None if injection_id is None else _INJECTIONS[injection_id]
+    _active_injection = None if injection_id is None else INJECTIONS[injection_id]
 
 
 @tool
@@ -45,7 +45,9 @@ def fetch_news(company: str) -> str:
     Args:
         company: Company name, for example "3M".
     """
-    items = [dict(item) for item in _NEWS if item["company"].lower() == company.lower()]
+    # The agent gets what it reads; the id and the source link are for the demo page.
+    items = [{k: item[k] for k in ("company", "date", "headline", "body")}
+             for item in NEWS if item["company"].lower() == company.lower()]
     if items and _active_injection:
         items[0]["body"] += _active_injection
     return json.dumps(items)

@@ -18,7 +18,8 @@ def test_send_email_records_to_outbox():
 
 def test_fetch_news_filters_by_company():
     items = json.loads(fetch_news.invoke({"company": "3M"}))
-    assert [i["id"] for i in items] == ["n1", "n2"]
+    assert [i["date"] for i in items] == ["2019-01-29", "2023-01-24", "2023-07-25"]
+    assert all(set(i) == {"company", "date", "headline", "body"} for i in items)
     assert all("INFORMATION" not in i["body"] for i in items)
 
 

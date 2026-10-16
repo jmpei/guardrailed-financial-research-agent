@@ -1,0 +1,14 @@
+# Dependencies for the Hugging Face Space. The Space installs gradio[mcp], which needs mcp<2,
+# so the MCP server (fastmcp) is left out here. Regenerate:
+#   uv pip compile -p 3.12 requirements.in -o requirements.txt
+secagent @ git+https://github.com/sunblaze-ucb/progent@5be7b63fa96f70bc19b72fbcee81f1c0bcc1a565
+agentdojo @ git+https://github.com/sunblaze-ucb/progent@5be7b63fa96f70bc19b72fbcee81f1c0bcc1a565#subdirectory=agentdojo
+langchain==1.4.6
+langchain-openai==1.7.2
+langgraph==1.2.15
+langfuse==5.0.1
+gradio[oauth,mcp]==6.30.0
+pageindex==0.4.0
+spaces==0.51.3
+uvicorn>=0.14.0
+websockets>=10.4
