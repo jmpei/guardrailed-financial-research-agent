@@ -2,25 +2,14 @@
 import argparse
 import asyncio
 import json
-import os
 import time
-
-from langchain_openai import ChatOpenAI
 
 from gfra.app_factory import build_researcher
 from gfra.config import DATA_DIR, MODEL
 from gfra.data import load_questions
-from gfra.financebench_eval import JUDGE_PROMPT, aggregate, evaluate
+from gfra.financebench_eval import JUDGE_MODEL, aggregate, evaluate, judge  # noqa: F401 (rejudge.py imports judge)
 
-# Picked against the user's labels on 14 answers: Cohen's kappa 0.74, against 0.20 for gpt-4o-mini.
-JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gpt-4.1-2025-04-14")
 RUNS = DATA_DIR.parent / "runs" / "financebench"
-
-
-async def judge(question, gold, answer, model: str = JUDGE_MODEL):
-    llm = ChatOpenAI(model=model, temperature=0)
-    reply = await llm.ainvoke(JUDGE_PROMPT.format(question=question, gold=gold, answer=answer))
-    return str(reply.content)
 
 
 async def run(guarded: bool, limit: int | None = None, trials: int = 1, docs=None, agent_model: str = MODEL) -> dict:

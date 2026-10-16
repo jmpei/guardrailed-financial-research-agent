@@ -1,8 +1,15 @@
 """FinanceBench accuracy: the agent answers, an LLM judge compares with the gold answer."""
 import math
+import os
 import re
 
+from langchain_openai import ChatOpenAI
+
 from gfra.stats import bootstrap_ci, per_item
+
+# A different model from the agent, since a model grades its own output leniently; checked against the user's
+# labels on 14 answers: Cohen's kappa 0.74, against 0.20 for gpt-4o-mini.
+JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gpt-4.1-2025-04-14")
 
 JUDGE_PROMPT = """You grade answers to questions about company filings.
 Question: {question}
@@ -12,6 +19,12 @@ The model answer is correct if it states the same fact or number as the gold ans
 It is refused if it declines to answer or says the information is unavailable.
 It is unknown if you cannot tell whether it matches the gold answer.
 Reply with one line: VERDICT: correct, VERDICT: incorrect, VERDICT: refused, or VERDICT: unknown."""
+
+
+async def judge(question: str, gold: str, answer: str, model: str = JUDGE_MODEL) -> str:
+    llm = ChatOpenAI(model=model, temperature=0)
+    reply = await llm.ainvoke(JUDGE_PROMPT.format(question=question, gold=gold, answer=answer))
+    return str(reply.content)
 
 
 def parse_verdict(text: str) -> str:
