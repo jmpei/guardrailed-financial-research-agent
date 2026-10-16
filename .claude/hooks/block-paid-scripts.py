@@ -1,22 +1,24 @@
 """PreToolUse hook: the scripts that call OpenAI need the user's approval.
 
-A Bash segment that runs Python (or `uv run`) and names one of the paid scripts
-is held for the user's confirmation in the main session and denied inside a
-subagent, where nobody is there to approve it.
+A Bash command that runs Python (or `uv run`) anywhere and names a paid entry
+point anywhere (a heredoc that imports one counts) is held for the user's
+confirmation in the main session and denied inside a subagent, where nobody is
+there to approve it. A false match only costs one confirmation.
 """
 import json
 import re
 import sys
 
-PAID = re.compile(r"\b(run_agentdojo|eval_financebench|eval_email|eval_gate|rejudge|index_documents)\b")
+PAID = re.compile(r"\b(run_agentdojo|eval_financebench|eval_email|eval_gate|rejudge|index_documents"
+                  r"|agentdojo\.scripts\.benchmark|build_researcher|submit_document|gfra\.mcp_server|app\.py)\b")
 RUNS_PYTHON = re.compile(r"\bpython[0-9.]*\b|\buv\s+run\b")
 
 event = json.load(sys.stdin)
 command = event.get("tool_input", {}).get("command", "")
-segments = re.split(r"&&|\|\||[;|\n]", command)
-hit = next((s.strip() for s in segments if PAID.search(s) and RUNS_PYTHON.search(s)), None)
-if hit is None:
+match = PAID.search(command)
+if match is None or not RUNS_PYTHON.search(command):
     sys.exit(0)
+hit = match.group(0)
 
 in_subagent = "agent_id" in event
 reason = (
