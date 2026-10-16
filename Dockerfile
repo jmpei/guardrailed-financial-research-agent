@@ -1,4 +1,4 @@
-# The demo (app.py) on CPU; the agent calls OpenAI, so pass OPENAI_API_KEY at run time:
+# The demo (app.py, served by serve.py) on CPU; the agent calls OpenAI, so pass OPENAI_API_KEY at run time:
 #   docker build -t gfra .
 #   docker run -p 8080:8080 -e OPENAI_API_KEY gfra
 # data/index and the filing PDFs are gitignored, so build from a checkout that has them (see .dockerignore).
@@ -13,7 +13,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
-COPY app.py ./
+COPY app.py serve.py ./
 COPY src ./src
 COPY data ./data
 
@@ -21,8 +21,6 @@ RUN useradd --create-home app
 USER app
 ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
-    GRADIO_ANALYTICS_ENABLED=False \
-    GRADIO_SERVER_NAME=0.0.0.0 \
-    GRADIO_SERVER_PORT=8080
+    GRADIO_ANALYTICS_ENABLED=False
 EXPOSE 8080
-CMD ["python", "app.py"]
+CMD ["python", "serve.py"]
