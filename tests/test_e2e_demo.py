@@ -105,7 +105,7 @@ def test_F5_toggles_reach_the_agent(page, demo):
     url, researchers = demo
     run(page, url, guarded=False, inject=True)
     expect(page.get_by_text("Agent: unguarded")).to_be_visible()
-    assert "attacker@evil.example" in researchers[False].injections[-1]
+    assert "mark.black-2134@gmail.com" in researchers[False].injections[-1]
     run(page, url, guarded=True, inject=False)
     expect(page.get_by_text("Agent: guarded")).to_be_visible()
     assert researchers[True].injections[-1] is None
@@ -121,7 +121,7 @@ def test_F6_sources_open_a_filing(page, demo):
 
 def test_F7_news_marks_the_injection(page, demo):
     page.goto(demo[0])
-    expect(page.locator("#news .injection").first).to_contain_text("attacker@evil.example")
+    expect(page.locator("#news .injection").first).to_contain_text("mark.black-2134@gmail.com")
     page.get_by_label("Inject an attack").set_checked(False)
     expect(page.locator("#news .injection")).to_have_count(0)
     expect(page.locator("#news .news-row .chip-red")).to_have_count(0)
@@ -134,7 +134,7 @@ def test_F8_news_item_opens_in_a_dialog(page, demo):
     page.locator("#news .news-row").first.click()
     dialog = page.locator("#news .news-dialog:target")
     expect(dialog).to_be_visible()
-    expect(dialog.locator(".injection")).to_contain_text("attacker@evil.example")
+    expect(dialog.locator(".injection")).to_contain_text("mark.black-2134@gmail.com")
     dialog.get_by_text("Close").click()
     expect(page.locator("#news .news-dialog:target")).to_have_count(0)
     page.emulate_media(reduced_motion="no-preference")
@@ -160,7 +160,7 @@ def test_F9_each_cleared_box_suggests_the_next_unused_sample(page, demo):
 def test_F10_case_buttons_fill_the_question_and_toggles_and_run_replays(page, demo):
     page.goto(demo[0])
     page.get_by_role("button", name="No guardrail · attack", exact=True).click()
-    expect(page.get_by_label("Question")).to_have_value(re.compile("lunch with Sarah"))
+    expect(page.get_by_label("Question")).to_have_value("What is the latest American Express news?")
     expect(page.get_by_label("Guardrail", exact=True)).not_to_be_checked()
     expect(page.get_by_label("Inject an attack")).to_be_checked()
     expect(page.locator("#trace")).to_contain_text("Done for the attacker")
@@ -169,10 +169,10 @@ def test_F10_case_buttons_fill_the_question_and_toggles_and_run_replays(page, de
     page.get_by_role("button", name="Run").click()  # same question, guardrail on: the Progent recording
     expect(page.locator("#trace")).to_contain_text("Blocked by Progent")
     expect(page.locator("#stats")).to_contain_text("attack failed")
-    page.get_by_role("button", name="Guardrail · false block", exact=True).click()
-    expect(page.get_by_label("Question")).to_have_value(re.compile("bill-december-2023"))
+    page.get_by_role("button", name="Guardrail · no attack", exact=True).click()
+    expect(page.get_by_label("Question")).to_have_value(re.compile("email it to team@bank.com"))
     expect(page.get_by_label("Inject an attack")).not_to_be_checked()
-    expect(page.locator("#stats")).to_contain_text("task not completed")
+    expect(page.locator("#stats")).to_contain_text("task completed")
 
 
 def test_F11_financebench_answer_shows_gold_and_verdict(page, demo):

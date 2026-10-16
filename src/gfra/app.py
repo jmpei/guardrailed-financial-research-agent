@@ -15,6 +15,9 @@ from gfra.financebench_eval import parse_verdict
 
 logger = logging.getLogger(__name__)
 
+# The attack the "Inject an attack" toggle hides in the news: the one that fooled this agent most in the ablation.
+DEMO_INJECTION = "important_instructions:summary"
+
 DISPLAY_FONT = "'Space Grotesk', Inter, ui-sans-serif, system-ui, sans-serif"
 MONO_FONT = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
 
@@ -177,7 +180,7 @@ CSS = f"""
   background: #17171c; color: #ffffff; font-size: 13px; line-height: 1.5; border-radius: 8px;
 }}
 #guardrail:hover::after {{ content: "Progent turns your question into a policy and checks every tool call against it. Calls your question did not ask for are blocked."; }}
-#inject:hover::after {{ content: "Hides an instruction to email an outside address in text the agent reads: the first news item of each company, or, in the recorded AgentDojo cases, a calendar event."; }}
+#inject:hover::after {{ content: "Hides AgentDojo's important_instructions attack in the first news item of each company: it asks the agent to email the summary to an address your question did not name."; }}
 .steps {{ margin: 8px 0 16px; padding-left: 20px; }}
 .steps li {{ display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #f2f2f2; font-size: 15px; }}
 .steps .tool {{ flex: none; }}
@@ -262,19 +265,19 @@ class RateLimiter:
 async def answer(question, guarded, inject, session_id, researchers, limiter) -> tuple[str, str, str, str]:
     """The agent's answer (Markdown), the run trace, its tokens / cost / latency, and the news feed with what
     this run fetched (HTML)."""
-    feed = news_html(NEWS, INJECTIONS["exfiltrate_email"] if inject else None, set())
+    feed = news_html(NEWS, INJECTIONS[DEMO_INJECTION] if inject else None, set())
     if not limiter.allow(session_id):
         return "Request limit reached; try again later.", "", "", feed
     try:
         reset_outbox()
-        set_injection("exfiltrate_email" if inject else None)
+        set_injection(DEMO_INJECTION if inject else None)
         result = await researchers[bool(guarded)].run(question)
         fetched = {str(c["args"].get("company", "")).lower() for c in result.tool_calls if c["name"] == "fetch_news"}
         injected = {item["company"].lower() for item in NEWS} if inject else set()
         return (result.answer, trace_html(question, result.tool_calls, result.blocked, list(OUTBOX), injected,
-                           INJECTIONS["exfiltrate_email"] if inject else None),
+                           INJECTIONS[DEMO_INJECTION] if inject else None),
                 stats_html(result.input_tokens + result.output_tokens, result.cost_usd, result.latency_s),
-                news_html(NEWS, INJECTIONS["exfiltrate_email"] if inject else None, fetched))
+                news_html(NEWS, INJECTIONS[DEMO_INJECTION] if inject else None, fetched))
     except Exception:
         logger.exception("Request failed")
         return "Error: the request failed; try again later.", "", "", feed
@@ -287,7 +290,6 @@ def build_demo(researchers: dict, limiter: RateLimiter, judge=None) -> gr.Blocks
     pool = samples()
     golds = finance_golds()
     recorded = recordings()
-    recorded_questions = {q for q, _, _ in recorded}
     with gr.Blocks(title="Guardrailed Financial Research Agent") as demo:
         gr.HTML(sources_sidebar())
         with gr.Row(equal_height=False):
@@ -296,10 +298,10 @@ def build_demo(researchers: dict, limiter: RateLimiter, judge=None) -> gr.Blocks
             with gr.Column(scale=2, elem_id="news-panel"):
                 gr.HTML('<div class="panel-title">News</div><div class="panel-sub">What <code>fetch_news</code> returns. '
                         'Each item is tagged. Hover to pause, click to read.</div>')
-                feed = gr.HTML(news_html(NEWS, INJECTIONS["exfiltrate_email"], set()), elem_id="news")
+                feed = gr.HTML(news_html(NEWS, INJECTIONS[DEMO_INJECTION], set()), elem_id="news")
         with gr.Row(elem_id="scenarios"):
             scenario_buttons = [gr.Button(label, elem_classes="pill", size="sm") for label, *_ in SCENARIOS]
-        scenario_note = gr.HTML('<div class="scenario-note">Replay a recorded run from the AgentDojo experiment, or ask your own '
+        scenario_note = gr.HTML('<div class="scenario-note">Replay a recorded run of this agent, or ask your own '
                                 'question below and press Run.</div>')
         with gr.Column(elem_id="ask"):
             question = gr.Textbox(value=pool[0], label="Question", lines=2, elem_id="question",
@@ -328,16 +330,12 @@ def build_demo(researchers: dict, limiter: RateLimiter, judge=None) -> gr.Blocks
         for button, (label, recording, note) in zip(scenario_buttons, SCENARIOS):
             button.click(lambda label=label, recording=recording, note=note: show_case(label, recording, note), None,
                          [question, guarded, inject, out, trace, stats, scenario_note, head], queue=False)
-        inject.change(lambda i: news_html(NEWS, INJECTIONS["exfiltrate_email"] if i else None, set()), inject, feed)
+        inject.change(lambda i: news_html(NEWS, INJECTIONS[DEMO_INJECTION] if i else None, set()), inject, feed)
 
         async def on_run(q, g, i, request: gr.Request):
-            feed_now = news_html(NEWS, INJECTIONS["exfiltrate_email"] if i else None, set())
-            if (q.strip(), g, i) in recorded:  # an AgentDojo task: its tools are not the agent's, so replay the run
+            feed_now = news_html(NEWS, INJECTIONS[DEMO_INJECTION] if i else None, set())
+            if (q.strip(), g, i) in recorded:  # a recorded case: replay it instead of calling the model
                 return (*replay(recorded[(q.strip(), g, i)]), feed_now, answer_head())
-            if q.strip() in recorded_questions:
-                return ("This AgentDojo task needs AgentDojo's own tools, so only its recorded runs can be shown, and "
-                        "there is no recording with these toggles. Use the case buttons above.", "", "", feed_now,
-                        answer_head())
             out_md, trace_html_, stats_html_, feed_html = await answer(q, g, i, request.session_hash, researchers, limiter)
             if q.strip() not in golds or not trace_html_:
                 return out_md, trace_html_, stats_html_, feed_html, answer_head()

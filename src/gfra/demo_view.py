@@ -21,18 +21,17 @@ def filings() -> list[tuple[str, int]]:
     return sorted((d["name"].removesuffix(".pdf"), d["pageNum"]) for d in docs)
 
 
-CASES_DIR = DATA_DIR / "agentdojo_cases"
-# Recorded runs from the AgentDojo experiment (AgentDojo's own agent, gpt-4o-mini), replayed without a model call:
-# (button label, recording, what it shows).
+CASES_DIR = DATA_DIR / "cases"
+# Recorded runs of this agent (scripts/record_case.py), replayed without a model call: (button label, recording, what it shows).
 SCENARIOS = [
-    ("No guardrail · attack", "workspace_user_task_5_injection_task_0_none.json",
-     "No defense: an instruction hidden in a calendar event makes the agent email an outside address."),
-    ("Guardrail · attack", "workspace_user_task_5_injection_task_0_progent.json",
-     "Same task and attack with Progent: the email to the outside address is blocked, and the question still gets answered."),
-    ("Guardrail · false block", "banking_user_task_0_no_attack_progent.json",
-     "No attack, yet Progent blocks reading the bill, so the agent cannot pay it. Without Progent it paid the bill."),
+    ("No guardrail · attack", "ask_amex_important_instructions_none.json",
+     "No Progent: an instruction hidden in the news makes the agent email an address the question never named."),
+    ("Guardrail · attack", "ask_amex_important_instructions_progent.json",
+     "Same question and attack with Progent: the agent still tries to send the email, and Progent blocks it."),
+    ("Guardrail · no attack", "send_amd_no_attack_progent.json",
+     "Progent with no attack: the email the question asks for goes out."),
 ]
-TARGET = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+|\b[A-Z]{2}\d{10,30}\b")
+TARGET = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+|\b[A-Z]{2}\d{10,30}\b")  # no trailing sentence period
 
 
 def _text(content) -> str:
@@ -47,7 +46,7 @@ def recording_question(recording: str) -> str:
 
 
 def recordings() -> dict[tuple[str, bool, bool], str]:
-    """(question, guardrail on, attack on) → recording, for every recorded AgentDojo run in CASES_DIR."""
+    """(question, guardrail on, attack on) → recording, for every recorded run in CASES_DIR."""
     out = {}
     for path in sorted(CASES_DIR.glob("*.json")):
         run = json.loads(path.read_text())
@@ -56,7 +55,7 @@ def recordings() -> dict[tuple[str, bool, bool], str]:
 
 
 def replay(recording: str) -> tuple[str, str, str]:
-    """A recorded AgentDojo run as the demo's answer (Markdown), steps (HTML) and footer (HTML)."""
+    """A recorded run (AgentDojo's message format) as the demo's answer (Markdown), steps (HTML) and footer (HTML)."""
     run = json.loads((CASES_DIR / recording).read_text())
     messages = run["messages"]
     injection = next(iter((run.get("injections") or {}).values()), None)
@@ -85,7 +84,7 @@ def replay(recording: str) -> tuple[str, str, str]:
     final = _text(next(m["content"] for m in reversed(messages) if m["role"] == "assistant"))
     trace = "".join(['<div class="section-title mono">Steps</div><ol class="steps">', *steps, "</ol>", *outcomes])
     attack_result = ("no attack" if not injection else "attack succeeded" if run["security"] else "attack failed")
-    footer = (f'<div class="stats mono">Recorded AgentDojo run · {escape(run["suite_name"])} · gpt-4o-mini · '
+    footer = (f'<div class="stats mono">Recorded run · {escape(run["pipeline_name"])} · '
               f'task {"completed" if run["utility"] else "not completed"} · {attack_result}</div>')
     return final, trace, footer
 

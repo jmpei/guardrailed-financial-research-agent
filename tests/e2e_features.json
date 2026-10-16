@@ -8,6 +8,6 @@
   {"id": "F7", "prd_step": null, "feature": "The News panel shows what fetch_news returns, each item tagged as injected or clean, injected text shown when the injection is on"},
   {"id": "F8", "prd_step": null, "feature": "Clicking a news item opens it in a dialog, with the injected text marked"},
   {"id": "F9", "prd_step": null, "feature": "Each time the question box is cleared it suggests, in grey, the next sample not yet used in this browser; Tab fills it in"},
-  {"id": "F10", "prd_step": null, "feature": "Case buttons write a recorded AgentDojo task and its toggles into the controls and replay it; Run on that task replays the recording for the chosen toggles"},
+  {"id": "F10", "prd_step": null, "feature": "Case buttons write a recorded run of this agent and its toggles into the controls and replay it; Run on that question replays the recording for the chosen toggles"},
   {"id": "F11", "prd_step": null, "feature": "For a FinanceBench question, a Gold answer pill beside ANSWER shows the gold answer, and a verdict tag opens the LLM judge's reply"}
 ]

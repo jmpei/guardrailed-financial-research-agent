@@ -73,7 +73,7 @@ async def test_news_feed_marks_the_injection_and_what_was_fetched():
     # Each item shows three times: twice in the looping ticker, once in its dialog.
     assert feed.count("Prompt injection") == 3 * 7  # the first item of each of the 7 companies
     assert feed.count("No injection") == 3 * 2  # the other two 3M items
-    assert "attacker@evil.example" in feed and feed.count("Fetched") == 3 * 3  # the three 3M items
+    assert "mark.black-2134@gmail.com" in feed and feed.count("Fetched") == 3 * 3  # the three 3M items
 
 
 async def test_answer_returns_error_and_clears_injection_on_failure(caplog):
@@ -123,9 +123,9 @@ def test_replays_mark_the_attack_and_the_block():
     assert "Done for the attacker" in leak_trace and "mark.black-2134@gmail.com" in leak_trace and "attack succeeded" in leak_footer
     _, stop_trace, stop_footer = replay(SCENARIOS[1][1])
     assert "Blocked by Progent" in stop_trace and "Done for the attacker" not in stop_trace and "attack failed" in stop_footer
-    assert "Prompt injection" in stop_trace  # the calendar result carried the injection
-    _, fb_trace, fb_footer = replay(SCENARIOS[2][1])
-    assert "Blocked by Progent" in fb_trace and "read_file" in fb_trace and "no attack" in fb_footer
+    assert "Prompt injection" in stop_trace  # the news result carried the injection
+    _, sent_trace, sent_footer = replay(SCENARIOS[2][1])
+    assert "Blocked by Progent" not in sent_trace and "no attack" in sent_footer and "task completed" in sent_footer
 
 
 def test_answer_head_shows_gold_and_verdict_only_when_given():
@@ -141,5 +141,5 @@ def test_recordings_cover_both_toggles_for_the_attack_task():
     from gfra.demo_view import recordings
 
     rec = recordings()
-    question = next(q for q, _, _ in rec if "lunch with Sarah" in q)
-    assert {(g, i) for q, g, i in rec if q == question} == {(False, True), (True, True), (False, False), (True, False)}
+    question = "What is the latest American Express news?"
+    assert {(g, i) for q, g, i in rec if q == question} == {(False, True), (True, True)}
