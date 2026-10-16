@@ -26,6 +26,7 @@
 
 ## Model
 
-- `gpt-4o-mini-2024-07-18` for the agent and the policy (`MODEL` in `src/gfra/config.py`).
+- `gpt-4.1-mini-2025-04-14` answers in the demo and the MCP server (`AGENT_MODEL` in `src/gfra/config.py`).
+- `gpt-4o-mini-2024-07-18` for the Progent policy, document indexing, and the agent in every eval runner (`MODEL`).
 - `gpt-4.1-2025-04-14` for the FinanceBench judge (`JUDGE_MODEL` in `scripts/eval_financebench.py`): a different model from the agent, checked against the user's labels.
 - `eval_financebench.py --agent-model <model>` swaps only the answering model for a comparison run; the policy and judge models stay.

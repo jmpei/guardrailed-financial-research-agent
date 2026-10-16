@@ -10,6 +10,7 @@ from gfra.app import CSS, THEME, RateLimiter, build_demo, head_script  # noqa: E
 from gfra.demo_view import PDF_DIR, samples  # noqa: E402
 from gfra.financebench_eval import judge  # noqa: E402
 from gfra.app_factory import build_researcher  # noqa: E402
+from gfra.config import AGENT_MODEL  # noqa: E402
 
 if os.getenv("SPACE_ID"):  # set by Hugging Face on a Space
     import spaces
@@ -20,7 +21,8 @@ if os.getenv("SPACE_ID"):  # set by Hugging Face on a Space
 
 
 # One request at a time: Progent keeps the policy in module globals.
-demo = build_demo({True: build_researcher(guarded=True), False: build_researcher(guarded=False)}, RateLimiter(5, max_total=100),
+demo = build_demo({True: build_researcher(guarded=True, model=AGENT_MODEL),
+                   False: build_researcher(guarded=False, model=AGENT_MODEL)}, RateLimiter(5, max_total=100),
                   judge=judge)
 demo.queue(default_concurrency_limit=1)
 

@@ -20,4 +20,5 @@ def build_server(researcher) -> FastMCP:
 
 if __name__ == "__main__":
     from gfra.app_factory import build_researcher
-    build_server(build_researcher(guarded=True)).run()
+    from gfra.config import AGENT_MODEL
+    build_server(build_researcher(guarded=True, model=AGENT_MODEL)).run()

@@ -1,8 +1,9 @@
-from gfra.config import MODEL, PRICES, READ_ONLY_TOOLS, cost_usd
+from gfra.config import AGENT_MODEL, MODEL, PRICES, READ_ONLY_TOOLS, cost_usd
 
 
 def test_model_has_price():
     assert MODEL in PRICES
+    assert AGENT_MODEL in PRICES
 
 
 def test_cost_usd_uses_per_million_prices():
