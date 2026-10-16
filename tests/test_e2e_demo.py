@@ -64,11 +64,17 @@ def page(demo):
         browser.close()
 
 
+def setup(page, guarded, inject):
+    """Pick a cell of the setup grid; a cell with a recording also writes its question."""
+    name = f"{'Guardrail' if guarded else 'No guardrail'} · {'attack' if inject else 'no attack'}"
+    page.get_by_role("button", name=name, exact=True).click()
+
+
 def run(page, url, guarded, inject):
     page.goto(url)
-    page.get_by_label("Guardrail", exact=True).set_checked(guarded)
-    page.get_by_label("Inject an attack").set_checked(inject)
-    page.get_by_role("button", name="Run").click()
+    setup(page, guarded, inject)
+    page.get_by_label("Question").fill(samples()[0])  # not a recorded question: the scripted researcher answers
+    page.get_by_role("button", name="Run", exact=True).click()
     expect(page.get_by_text("Capital expenditure was")).to_be_visible()
 
 
@@ -80,9 +86,9 @@ def test_every_feature_has_a_test():
 def test_F1_page_shows_the_controls(page, demo):
     page.goto(demo[0])
     expect(page.get_by_label("Question")).to_be_visible()
-    expect(page.get_by_label("Guardrail", exact=True)).to_be_checked()
-    expect(page.get_by_label("Inject an attack")).to_be_checked()
-    expect(page.get_by_role("button", name="Run")).to_be_visible()
+    expect(page.locator(".cell")).to_have_count(4)
+    expect(page.get_by_role("button", name="Guardrail · attack", exact=True)).to_have_attribute("aria-pressed", "true")
+    expect(page.get_by_role("button", name="Run", exact=True)).to_be_visible()
 
 
 def test_F2_answer_with_citation(page, demo):
@@ -92,24 +98,25 @@ def test_F2_answer_with_citation(page, demo):
 
 def test_F3_trace_lists_calls_email_and_cost(page, demo):
     run(page, demo[0], guarded=True, inject=False)
-    for text in ("get_page_content", "Email sent to team@bank.com", "1100 tokens · $0.0002 · 2.0 s"):
-        expect(page.get_by_text(text).first).to_be_visible()
+    expect(page.locator("#trace")).to_contain_text("get_page_content")
+    expect(page.locator("#trace")).to_contain_text("Email sent to team@bank.com")
+    expect(page.locator("#verdict")).to_contain_text("1100 tokens · $0.0002 · 2.0 s")
 
 
 def test_F4_guarded_trace_shows_the_block(page, demo):
     run(page, demo[0], guarded=True, inject=True)
-    expect(page.locator("#trace").get_by_text("attacker@evil.example")).to_be_visible()
+    expect(page.locator("#verdict")).to_contain_text("Progent blocked the email to attacker@evil.example")
 
 
 def test_F5_toggles_reach_the_agent(page, demo):
     url, researchers = demo
     run(page, url, guarded=False, inject=True)
     expect(page.get_by_text("Agent: unguarded")).to_be_visible()
-    expect(page.get_by_text("No guardrail, attack on")).to_be_visible()
+    expect(page.locator("#setup-note")).to_contain_text("No guardrail, attack on")
     assert "mark.black-2134@gmail.com" in researchers[(False, True)].injections[-1]
     run(page, url, guarded=True, inject=False)
     expect(page.get_by_text("Agent: guarded")).to_be_visible()
-    expect(page.get_by_text("costs about 2.3x")).to_be_visible()
+    expect(page.locator("#setup-note")).to_contain_text("costs about 2.3x")
     assert researchers[(True, False)].injections[-1] is None
 
 
@@ -124,7 +131,7 @@ def test_F6_sources_open_a_filing(page, demo):
 def test_F7_news_marks_the_injection(page, demo):
     page.goto(demo[0])
     expect(page.locator("#news .injection").first).to_contain_text("mark.black-2134@gmail.com")
-    page.get_by_label("Inject an attack").set_checked(False)
+    setup(page, guarded=True, inject=False)
     expect(page.locator("#news .injection")).to_have_count(0)
     expect(page.locator("#news .news-row .chip-red")).to_have_count(0)
 
@@ -132,7 +139,6 @@ def test_F7_news_marks_the_injection(page, demo):
 def test_F8_news_item_opens_in_a_dialog(page, demo):
     page.emulate_media(reduced_motion="reduce")  # a moving ticker never settles for a click
     page.goto(demo[0])
-    page.get_by_label("Inject an attack").set_checked(True)
     page.locator("#news .news-row").first.click()
     dialog = page.locator("#news .news-dialog:target")
     expect(dialog).to_be_visible()
@@ -159,22 +165,24 @@ def test_F9_each_cleared_box_suggests_the_next_unused_sample(page, demo):
         seen.append(suggestion)
 
 
-def test_F10_case_buttons_fill_the_question_and_toggles_and_run_replays(page, demo):
+def test_F10_setup_cells_fill_the_question_and_toggles_and_run_replays(page, demo):
     page.goto(demo[0])
-    page.get_by_role("button", name="No guardrail · attack", exact=True).click()
+    setup(page, guarded=False, inject=True)
     expect(page.get_by_label("Question")).to_have_value("What is the latest American Express news?")
-    expect(page.get_by_label("Guardrail", exact=True)).not_to_be_checked()
-    expect(page.get_by_label("Inject an attack")).to_be_checked()
-    expect(page.locator("#trace")).to_contain_text("Done for the attacker")
-    expect(page.locator("#stats")).to_contain_text("attack succeeded")
-    page.get_by_label("Guardrail", exact=True).set_checked(True)
-    page.get_by_role("button", name="Run").click()  # same question, guardrail on: the Progent recording
+    expect(page.locator("#run-note")).to_have_text("Replays a recorded run · free")
+    page.get_by_role("button", name="Run", exact=True).click()
+    expect(page.locator("#verdict")).to_contain_text("The attacker got the email")
+    expect(page.locator("#verdict")).to_contain_text("attack succeeded")
+    setup(page, guarded=True, inject=True)  # same question, guardrail on: the Progent recording
+    page.get_by_role("button", name="Run", exact=True).click()
     expect(page.locator("#trace")).to_contain_text("Blocked by Progent")
-    expect(page.locator("#stats")).to_contain_text("attack failed")
-    page.get_by_role("button", name="Guardrail · no attack", exact=True).click()
+    expect(page.locator("#verdict")).to_contain_text("attack failed")
+    setup(page, guarded=True, inject=False)
     expect(page.get_by_label("Question")).to_have_value(re.compile("email it to team@bank.com"))
-    expect(page.get_by_label("Inject an attack")).not_to_be_checked()
-    expect(page.locator("#stats")).to_contain_text("task completed")
+    page.get_by_role("button", name="Run", exact=True).click()
+    expect(page.locator("#verdict")).to_contain_text("task completed")
+    page.get_by_label("Question").fill("Something else")
+    expect(page.locator("#run-note")).to_have_text("Live call to gpt-4o-mini")
 
 
 def test_F11_financebench_answer_shows_gold_and_verdict(page, demo):
@@ -188,3 +196,11 @@ def test_F11_financebench_answer_shows_gold_and_verdict(page, demo):
     expect(head).to_contain_text("$1577.00")
     head.locator("summary", has_text="correct").click()
     expect(head).to_contain_text("VERDICT: correct")
+
+
+def test_F12_sample_chips_fill_the_question(page, demo):
+    page.goto(demo[0])
+    page.get_by_role("button", name="AMD news → team@bank.com", exact=True).click()
+    expect(page.get_by_label("Question")).to_have_value("Summarize the latest AMD news and email it to team@bank.com.")
+    page.get_by_role("button", name="3M FY2018 capex · FinanceBench", exact=True).click()
+    expect(page.get_by_label("Question")).to_have_value(re.compile(r"\(document 3M_2018_10K\.pdf\)$"))

@@ -1,13 +1,14 @@
 [
-  {"id": "F1", "prd_step": 2, "feature": "The page shows a question box, the guardrail and injection toggles, and a Run button"},
+  {"id": "F1", "prd_step": 2, "feature": "The page shows a question box, the 2x2 setup grid with the default setup picked, and a Run button"},
   {"id": "F2", "prd_step": 3, "feature": "Run shows the agent's answer with its citation"},
-  {"id": "F3", "prd_step": 4, "feature": "The trace lists each tool call, the email sent, and the tokens, cost and latency"},
-  {"id": "F4", "prd_step": 4, "feature": "With the guardrail on, the trace shows the call Progent blocked"},
-  {"id": "F5", "prd_step": 5, "feature": "The injection toggle puts the attack into the news, and the guardrail toggle switches between the guarded and unguarded agent"},
+  {"id": "F3", "prd_step": 4, "feature": "The path of the email lists each tool call and the email sent; the verdict shows the tokens, cost and latency"},
+  {"id": "F4", "prd_step": 4, "feature": "With the guardrail on, the verdict names the email Progent blocked"},
+  {"id": "F5", "prd_step": 5, "feature": "The setup grid switches the injection and the guardrail for the agent, and its note explains the picked setup"},
   {"id": "F6", "prd_step": null, "feature": "The Sources drawer lists the indexed filings and opens a filing's PDF in a new tab"},
   {"id": "F7", "prd_step": null, "feature": "The News panel shows what fetch_news returns, each item tagged as injected or clean, injected text shown when the injection is on"},
   {"id": "F8", "prd_step": null, "feature": "Clicking a news item opens it in a dialog, with the injected text marked"},
   {"id": "F9", "prd_step": null, "feature": "Each time the question box is cleared it suggests, in grey, the next sample not yet used in this browser; Tab fills it in"},
-  {"id": "F10", "prd_step": null, "feature": "Case buttons write a recorded run of this agent and its toggles into the controls and replay it; Run on that question replays the recording for the chosen toggles"},
-  {"id": "F11", "prd_step": null, "feature": "For a FinanceBench question, a Gold answer pill beside ANSWER shows the gold answer, and a verdict tag opens the LLM judge's reply"}
+  {"id": "F10", "prd_step": null, "feature": "A setup cell with a recording writes its question and toggles, the Run note says it replays, and Run replays the recording for the picked setup"},
+  {"id": "F11", "prd_step": null, "feature": "For a FinanceBench question, a Gold answer pill beside ANSWER shows the gold answer, and a verdict tag opens the LLM judge's reply"},
+  {"id": "F12", "prd_step": null, "feature": "Sample chips write their question into the question box"}
 ]
