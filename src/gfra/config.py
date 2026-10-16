@@ -1,7 +1,8 @@
 from pathlib import Path
 
 MODEL = "gpt-4o-mini-2024-07-18"
-# Answers in the demo and the MCP server. The Progent policy, indexing and the eval runners stay on MODEL.
+# The stronger answering model (FinanceBench held-out accuracy 50% → 68% at 1.9× the cost). Not in use: the demo and
+# the MCP server answer with MODEL; pass model=AGENT_MODEL to build_researcher to switch.
 AGENT_MODEL = "gpt-4.1-mini-2025-04-14"
 
 # USD per 1M tokens (input, output), OpenAI pricing page
