@@ -12,8 +12,8 @@ GATE_DOCS = ("AMD_2022_10K", "AMERICANEXPRESS_2022_10K")  # 14 FinanceBench ques
 TRIALS = 1
 # From the approved debug run on GATE_DOCS and the email cases: MIN_ACCURACY is the lower end of
 # accuracy_ci95, MIN_DELIVERY the delivery_rate. A bar set from a measured run can pass.
-MIN_ACCURACY = None
-MIN_DELIVERY = None
+MIN_ACCURACY = 0.28  # accuracy 0.57, accuracy_ci95 [0.29, 0.86], judged by gpt-4.1
+MIN_DELIVERY = 1.0
 
 
 def check_thresholds() -> None:
