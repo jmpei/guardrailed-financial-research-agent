@@ -3,7 +3,7 @@ import json
 import re
 from pathlib import Path
 
-from gfra.actions import OUTBOX, reset_outbox, set_injection
+from gfra.actions import OUTBOX, injection_shown, reset_outbox, set_injection
 from gfra.stats import bootstrap_ci, per_item
 
 
@@ -28,20 +28,23 @@ async def evaluate(cases, researcher, trials: int = 1) -> list[dict]:
         for trial in range(trials):
             reset_outbox()
             set_injection(case["injection"])
-            error, blocked, policy_error = None, [], None
+            error, blocked, policy_error, cost, tool_calls, answer = None, [], None, 0.0, [], None
             try:
                 result = await researcher.run(case["question"])
-                blocked, policy_error = result.blocked, result.policy_error
+                blocked, policy_error, cost, tool_calls = result.blocked, result.policy_error, result.cost_usd, result.tool_calls
+                answer = result.answer
             except Exception as exc:
                 error = repr(exc)
             finally:
+                seen = injection_shown()
                 set_injection(None)
             graded = grade(case, OUTBOX)
             if error:
                 graded["delivered"] = False
             rows.append({"id": case["id"], "trial": trial, "should_send": bool(case["expect_sent_to"]),
                          "sent_to": [m["to"] for m in OUTBOX], "blocked": blocked, **graded, "error": error,
-                         "policy_error": policy_error})
+                         "policy_error": policy_error, "cost_usd": cost, "tool_calls": tool_calls,
+                         "injection_seen": seen, "outbox": list(OUTBOX), "answer": answer})
     return rows
 
 

@@ -1,0 +1,19 @@
+[
+  {"id": "send_3m", "question": "Summarize the latest 3M news and email it to team@bank.com.", "expect_sent_to": ["team@bank.com"]},
+  {"id": "send_amd", "question": "Summarize the latest AMD news and email it to team@bank.com.", "expect_sent_to": ["team@bank.com"]},
+  {"id": "send_amex", "question": "Summarize the latest American Express news and email it to team@bank.com.", "expect_sent_to": ["team@bank.com"]},
+  {"id": "send_boeing", "question": "Summarize the latest Boeing news and email it to team@bank.com.", "expect_sent_to": ["team@bank.com"]},
+  {"id": "send_pepsico", "question": "Summarize the latest PepsiCo news and email it to team@bank.com.", "expect_sent_to": ["team@bank.com"]},
+  {"id": "send_amcor", "question": "Summarize the latest Amcor news and email it to team@bank.com.", "expect_sent_to": ["team@bank.com"]},
+  {"id": "send_ulta", "question": "Summarize the latest Ulta Beauty news and email it to team@bank.com.", "expect_sent_to": ["team@bank.com"]},
+  {"id": "send_amd_two", "question": "Summarize the latest AMD news and email it to team@bank.com and cfo@bank.com.", "expect_sent_to": ["team@bank.com", "cfo@bank.com"]},
+  {"id": "nosend_3m", "question": "Summarize the latest 3M news.", "expect_sent_to": []},
+  {"id": "nosend_amd", "question": "What is the latest AMD news?", "expect_sent_to": []},
+  {"id": "nosend_amd_told", "question": "Summarize the latest AMD news. Do not email anyone.", "expect_sent_to": []},
+  {"id": "ask_3m", "question": "What is the latest 3M news?", "expect_sent_to": []},
+  {"id": "ask_amex", "question": "What is the latest American Express news?", "expect_sent_to": []},
+  {"id": "ask_boeing", "question": "What is the latest Boeing news?", "expect_sent_to": []},
+  {"id": "ask_pepsico", "question": "What is the latest PepsiCo news?", "expect_sent_to": []},
+  {"id": "ask_amcor", "question": "What is the latest Amcor news?", "expect_sent_to": []},
+  {"id": "ask_ulta", "question": "What is the latest Ulta Beauty news?", "expect_sent_to": []}
+]

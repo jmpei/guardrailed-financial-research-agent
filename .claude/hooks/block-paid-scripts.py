@@ -9,7 +9,7 @@ import json
 import re
 import sys
 
-PAID = re.compile(r"\b(run_agentdojo|eval_financebench|eval_email|eval_gate|rejudge|index_documents"
+PAID = re.compile(r"\b(run_agentdojo|eval_financebench|eval_email|eval_ablation|record_case|eval_gate|rejudge|index_documents"
                   r"|agentdojo\.scripts\.benchmark|build_researcher|submit_document|gfra\.mcp_server|app\.py)\b")
 RUNS_PYTHON = re.compile(r"\bpython[0-9.]*\b|\buv\s+run\b")
 
